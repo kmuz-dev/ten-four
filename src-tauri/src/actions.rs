@@ -209,7 +209,7 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
     // Ask these providers to skip reasoning/thinking — post-processing rarely
     // benefits from it and it adds seconds of latency. llm_client picks the
     // field the endpoint understands and retries without it if rejected.
-    let disable_reasoning = matches!(provider.id.as_str(), "custom" | "openrouter");
+    let disable_reasoning = matches!(provider.id.as_str(), "custom" | "openrouter" | "groq");
 
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
@@ -1094,7 +1094,17 @@ mod smart_format_eval {
 
         let mut timings = Vec::new();
         let mut failed = 0;
-        for case in &cases {
+        // Free tiers cap tokens per minute; EVAL_PAUSE_MS spaces the requests.
+        let pause = std::time::Duration::from_millis(
+            std::env::var("EVAL_PAUSE_MS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0),
+        );
+        for (index, case) in cases.iter().enumerate() {
+            if index > 0 {
+                tokio::time::sleep(pause).await;
+            }
             settings.snippets = case.snippets.clone();
             // Mirror the transcription stage, which strips fillers before the
             // output step runs (English-only model, as on this laptop).

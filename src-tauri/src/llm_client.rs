@@ -57,9 +57,16 @@ impl ReasoningParams {
 /// Pick the reasoning-disable request fields an endpoint understands.
 /// Unknown endpoints get the common OpenAI-style field; if they reject it,
 /// the request is retried without it (see `send_chat_completion_with_schema`).
-fn reasoning_disable_params(provider: &PostProcessProvider) -> ReasoningParams {
+fn reasoning_disable_params(provider: &PostProcessProvider, model: &str) -> ReasoningParams {
     let base_url = provider.base_url.to_lowercase();
-    if base_url.contains("api.deepseek.com") {
+    if base_url.contains("api.groq.com") && model.starts_with("openai/gpt-oss") {
+        // Groq's gpt-oss models can't turn reasoning off; "low" is the floor:
+        // https://console.groq.com/docs/reasoning
+        ReasoningParams {
+            reasoning_effort: Some("low".to_string()),
+            ..Default::default()
+        }
+    } else if base_url.contains("api.deepseek.com") {
         // DeepSeek rejects reasoning_effort "none" and uses its own field:
         // https://api-docs.deepseek.com/guides/thinking_mode
         ReasoningParams {
@@ -381,7 +388,7 @@ pub async fn send_chat_completion_with_schema(
 
     let key = endpoint_key(provider, model);
     let reasoning = if disable_reasoning && !is_known_rejected(&key) {
-        reasoning_disable_params(provider)
+        reasoning_disable_params(provider, model)
     } else {
         ReasoningParams::default()
     };
@@ -685,7 +692,8 @@ mod tests {
 
     #[test]
     fn custom_provider_uses_top_level_reasoning_effort() {
-        let params = reasoning_disable_params(&provider("custom", "http://localhost:11434/v1"));
+        let params =
+            reasoning_disable_params(&provider("custom", "http://localhost:11434/v1"), "llama3");
         let json = request_json(params);
         assert_eq!(json["reasoning_effort"], "none");
         assert!(json.get("reasoning").is_none());
@@ -695,7 +703,7 @@ mod tests {
     #[test]
     fn openrouter_uses_nested_reasoning_object() {
         let params =
-            reasoning_disable_params(&provider("openrouter", "https://openrouter.ai/api/v1"));
+            reasoning_disable_params(&provider("openrouter", "https://openrouter.ai/api/v1"), "m");
         let json = request_json(params);
         assert!(json.get("reasoning_effort").is_none());
         assert_eq!(json["reasoning"]["effort"], "none");
@@ -704,8 +712,28 @@ mod tests {
     }
 
     #[test]
+    fn groq_gpt_oss_uses_low_effort_and_other_groq_models_none() {
+        let groq = provider("groq", "https://api.groq.com/openai/v1");
+        assert_eq!(
+            reasoning_disable_params(&groq, "openai/gpt-oss-120b")
+                .reasoning_effort
+                .as_deref(),
+            Some("low")
+        );
+        assert_eq!(
+            reasoning_disable_params(&groq, "qwen/qwen3.8-27b")
+                .reasoning_effort
+                .as_deref(),
+            Some("none")
+        );
+    }
+
+    #[test]
     fn deepseek_base_url_uses_thinking_disabled() {
-        let params = reasoning_disable_params(&provider("custom", "https://api.deepseek.com"));
+        let params = reasoning_disable_params(
+            &provider("custom", "https://api.deepseek.com"),
+            "deepseek-chat",
+        );
         let json = request_json(params);
         assert!(json.get("reasoning_effort").is_none());
         assert!(json.get("reasoning").is_none());
