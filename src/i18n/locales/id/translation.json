@@ -307,7 +307,8 @@
           "options": {
             "none": "Tidak Ada",
             "minimal": "Minimal",
-            "live": "Waktu Nyata"
+            "live": "Waktu Nyata",
+            "island": "Pulau"
           }
         },
         "position": {
@@ -724,6 +725,7 @@
     }
   },
   "overlay": {
+    "recording": "Merekam",
     "transcribing": "Mentranskripsikan...",
     "processing": "Memproses..."
   },

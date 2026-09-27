@@ -303,11 +303,12 @@
       "overlay": {
         "style": {
           "title": "Overlay",
-          "description": "Choose the recording overlay: None hides it, Minimal shows a compact pill, Live shows transcription in real time as you speak (streaming-capable models only — look for the Streaming badge in the model picker). On Linux 'None' is recommended.",
+          "description": "Choose the recording overlay: None hides it, Minimal shows a compact pill, Live shows transcription in real time as you speak (streaming-capable models only — look for the Streaming badge in the model picker), Island grows out of the MacBook notch (macOS; elsewhere it shows as Minimal). On Linux 'None' is recommended.",
           "options": {
             "none": "None",
             "minimal": "Minimal",
-            "live": "Live"
+            "live": "Live",
+            "island": "Island"
           }
         },
         "position": {
@@ -724,6 +725,7 @@
     }
   },
   "overlay": {
+    "recording": "Recording",
     "transcribing": "Transcribing...",
     "processing": "Processing..."
   },

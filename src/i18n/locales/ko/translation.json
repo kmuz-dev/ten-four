@@ -307,7 +307,8 @@
           "options": {
             "none": "없음",
             "minimal": "간단",
-            "live": "실시간"
+            "live": "실시간",
+            "island": "아일랜드"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "녹음 중",
     "transcribing": "텍스트로 변환 중...",
     "processing": "처리 중..."
   },

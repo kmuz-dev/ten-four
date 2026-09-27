@@ -307,7 +307,8 @@
           "options": {
             "none": "Ninguna",
             "minimal": "Minimalista",
-            "live": "En vivo"
+            "live": "En vivo",
+            "island": "Isla"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "Grabando",
     "transcribing": "Transcribiendo...",
     "processing": "Procesando..."
   },

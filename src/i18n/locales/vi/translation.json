@@ -307,7 +307,8 @@
           "options": {
             "none": "Không có",
             "minimal": "Tối giản",
-            "live": "Trực tiếp"
+            "live": "Trực tiếp",
+            "island": "Đảo"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "Đang ghi âm",
     "transcribing": "Đang chuyển đổi...",
     "processing": "Đang xử lý..."
   },

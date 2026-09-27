@@ -307,7 +307,8 @@
           "options": {
             "none": "Ingen",
             "minimal": "Minimal",
-            "live": "Live"
+            "live": "Live",
+            "island": "Ö"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "Spelar in",
     "transcribing": "Transkriberar...",
     "processing": "Bearbetar..."
   },

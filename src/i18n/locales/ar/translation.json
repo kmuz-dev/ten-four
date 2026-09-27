@@ -284,7 +284,8 @@
           "options": {
             "none": "بلا",
             "minimal": "مبسط",
-            "live": "مباشر"
+            "live": "مباشر",
+            "island": "الجزيرة"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "جارٍ التسجيل",
     "transcribing": "...جاري التفريغ",
     "processing": "...جاري المعالجة"
   },

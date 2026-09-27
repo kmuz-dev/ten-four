@@ -307,7 +307,8 @@
           "options": {
             "none": "無",
             "minimal": "精簡",
-            "live": "即時"
+            "live": "即時",
+            "island": "動態島"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "正在錄音",
     "transcribing": "正在轉錄...",
     "processing": "處理中..."
   },

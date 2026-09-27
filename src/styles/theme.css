@@ -26,6 +26,9 @@
   --color-background-ui: #da5893;
   --color-text-stroke: #f6f6f6;
   --color-mid-gray: #808080;
+  /* Tally: the one color Handy owns — the "you are live" record light
+     (DESIGN.md). This is its value on dark surfaces such as the island. */
+  --color-tally-hud: #ff6242;
 
   /* Active palette — defaults to light, follows the OS via the media query
      below, or is forced by `data-theme` (see the overrides below). */

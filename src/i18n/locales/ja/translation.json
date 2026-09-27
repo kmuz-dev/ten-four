@@ -307,7 +307,8 @@
           "options": {
             "none": "なし",
             "minimal": "ミニマル",
-            "live": "ライブ"
+            "live": "ライブ",
+            "island": "アイランド"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "録音中",
     "transcribing": "文字起こし中…",
     "processing": "処理中…"
   },

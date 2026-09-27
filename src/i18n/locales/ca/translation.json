@@ -307,7 +307,8 @@
           "options": {
             "none": "Cap",
             "minimal": "Mínima",
-            "live": "En directe"
+            "live": "En directe",
+            "island": "Illa"
           }
         },
         "position": {
@@ -724,6 +725,7 @@
     }
   },
   "overlay": {
+    "recording": "Enregistrant",
     "transcribing": "S'està transcrivint...",
     "processing": "S'està processant..."
   },

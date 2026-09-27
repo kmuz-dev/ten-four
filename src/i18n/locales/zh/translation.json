@@ -307,7 +307,8 @@
           "options": {
             "none": "无",
             "minimal": "精简",
-            "live": "实时"
+            "live": "实时",
+            "island": "灵动岛"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "正在录音",
     "transcribing": "正在转录...",
     "processing": "处理中..."
   },

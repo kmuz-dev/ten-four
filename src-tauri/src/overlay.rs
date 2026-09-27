@@ -62,6 +62,76 @@ fn overlay_dimensions(state: &str) -> (f64, f64) {
     }
 }
 
+/// Whether the notch island is the active overlay. Island is macOS-only; the
+/// other platforms render the Minimal pill for it (the frontend only draws the
+/// island when it receives geometry, which only macOS sends).
+fn uses_island(settings: &settings::AppSettings) -> bool {
+    cfg!(target_os = "macos") && settings.overlay_style == OverlayStyle::Island
+}
+
+/// Notch of the display the island appears on, in points. Both fields are 0 on
+/// a display without a notch; the frontend then draws a tab from the top edge.
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IslandGeometry {
+    pub notch_width: f64,
+    pub notch_height: f64,
+}
+
+const ISLAND_MIN_CORE_WIDTH: f64 = 120.0;
+const ISLAND_MIN_HEIGHT: f64 = 24.0;
+
+/// Island window size (logical). The window only has to contain the drawn
+/// island: the notch plus the grown wings, the concave shoulders, and the glow
+/// bleeding below it. The frontend owns the exact geometry; this is headroom.
+fn island_window_size(geometry: IslandGeometry) -> (f64, f64) {
+    (
+        geometry.notch_width.max(ISLAND_MIN_CORE_WIDTH) + 200.0,
+        geometry.notch_height.max(ISLAND_MIN_HEIGHT) + 24.0,
+    )
+}
+
+/// Reads the notch from the NSScreen matching `monitor`. Must run on the main
+/// thread (AppKit); off it, or with no match, reports "no notch".
+#[cfg(target_os = "macos")]
+fn island_geometry(monitor: &tauri::Monitor) -> IslandGeometry {
+    use objc2::MainThreadMarker;
+    use objc2_app_kit::NSScreen;
+
+    let none = IslandGeometry {
+        notch_width: 0.0,
+        notch_height: 0.0,
+    };
+    let Some(mtm) = MainThreadMarker::new() else {
+        return none;
+    };
+    // tao reports each monitor's position/size in physical pixels at that
+    // monitor's own scale, so dividing by it recovers AppKit's points. x and
+    // width mean the same in both coordinate systems (only y is flipped).
+    let scale = monitor.scale_factor();
+    let x = monitor.position().x as f64 / scale;
+    let width = monitor.size().width as f64 / scale;
+    for screen in NSScreen::screens(mtm).iter() {
+        let frame = screen.frame();
+        if (frame.origin.x - x).abs() > 1.0 || (frame.size.width - width).abs() > 1.0 {
+            continue;
+        }
+        let top_inset = screen.safeAreaInsets().top;
+        if top_inset <= 0.0 {
+            return none;
+        }
+        // The notch is whatever the two auxiliary menu-bar areas beside it
+        // leave uncovered.
+        let left = screen.auxiliaryTopLeftArea().size.width;
+        let right = screen.auxiliaryTopRightArea().size.width;
+        return IslandGeometry {
+            notch_width: (frame.size.width - left - right).max(0.0),
+            notch_height: top_inset,
+        };
+    }
+    none
+}
+
 static LAST_MIC_LEVEL_EMIT: AtomicU64 = AtomicU64::new(0);
 const EMIT_THROTTLE_MS: u64 = 33; // ~30 FPS
 
@@ -257,6 +327,11 @@ fn calculate_overlay_position(
     let settings = settings::get_settings(app_handle);
 
     let x = monitor_x + (monitor_width - width) / 2.0;
+    if uses_island(&settings) {
+        // Flush with the top of the screen, over the notch and menu bar (the
+        // panel's Status level sits above the menu bar).
+        return Some((x, monitor_y));
+    }
     let y = match settings.overlay_position {
         OverlayPosition::Top => monitor_y + OVERLAY_TOP_OFFSET,
         OverlayPosition::Bottom => {
@@ -508,8 +583,17 @@ fn show_overlay_state(app_handle: &AppHandle, state: &str) {
 }
 
 fn show_overlay_state_on_main(app_handle: &AppHandle, state: &str) {
-    // Size the overlay for this state (compact vs. streaming), then position it.
-    let (width, height) = overlay_dimensions(state);
+    // Size the overlay for this state (compact vs. streaming, or the island
+    // around this display's notch), then position it.
+    #[cfg(target_os = "macos")]
+    let island = uses_island(&settings::get_settings(app_handle))
+        .then(|| get_monitor_with_cursor(app_handle).map(|m| island_geometry(&m)))
+        .flatten();
+    #[cfg(not(target_os = "macos"))]
+    let island: Option<IslandGeometry> = None;
+    let (width, height) = island
+        .map(island_window_size)
+        .unwrap_or_else(|| overlay_dimensions(state));
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
         // Invalidate any delayed hide still in flight from a previous session
         // (see `hide_recording_overlay`).
@@ -589,6 +673,9 @@ fn show_overlay_state_on_main(app_handle: &AppHandle, state: &str) {
             );
         }
 
+        // Geometry first: the frontend must know which form to draw before the
+        // show event makes it visible.
+        let _ = overlay_window.emit("overlay-island", island);
         let _ = overlay_window.emit("show-overlay", state);
     }
 }
@@ -685,21 +772,50 @@ fn update_overlay_position_on_main(app_handle: &AppHandle) {
 /// the instant it drained, well inside the 300 ms hide delay.
 static OVERLAY_SHOW_GENERATION: AtomicU64 = AtomicU64::new(0);
 
-/// Hides the recording overlay window with fade-out animation
+/// How the overlay leaves the screen. The island answers a delivered
+/// transcription with a check before retracting into the notch, so it needs to
+/// know which exit this is and stay mapped long enough to play it.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum OverlayExit {
+    /// Cancelled, failed, or nothing to paste.
+    Dismiss,
+    /// Text was pasted.
+    Done,
+}
+
+/// Hides the recording overlay (cancel, error, empty result) with its exit
+/// animation and no success cue.
 pub fn hide_recording_overlay(app_handle: &AppHandle) {
-    // Always hide the overlay regardless of settings - if setting was changed while recording,
-    // we still want to hide it properly
+    hide_overlay(app_handle, OverlayExit::Dismiss);
+}
+
+/// Hides the overlay after text was pasted, letting the island confirm it.
+pub fn finish_recording_overlay(app_handle: &AppHandle) {
+    hide_overlay(app_handle, OverlayExit::Done);
+}
+
+fn hide_overlay(app_handle: &AppHandle, exit: OverlayExit) {
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        // Snapshot before doing anything observable, so any show that lands
-        // after this point invalidates the delayed hide below.
         let scheduled_at = OVERLAY_SHOW_GENERATION.load(Ordering::SeqCst);
-        // Emit event to trigger fade-out animation
-        let _ = overlay_window.emit("hide-overlay", ());
-        // Hide the window after a short delay to allow animation to complete,
-        // unless a newer session has shown the overlay again by then.
+        let island = uses_island(&settings::get_settings(app_handle));
+        let _ = overlay_window.emit(
+            "hide-overlay",
+            if exit == OverlayExit::Done {
+                "done"
+            } else {
+                "dismiss"
+            },
+        );
+        // Keep the window mapped until the exit animation ends: the pill fades
+        // in 300ms; the island retracts in ~350ms, after a check when Done.
+        let linger_ms = match (island, exit) {
+            (true, OverlayExit::Done) => 1100,
+            (true, OverlayExit::Dismiss) => 420,
+            (false, _) => 300,
+        };
         let window_clone = overlay_window.clone();
         std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(300));
+            std::thread::sleep(std::time::Duration::from_millis(linger_ms));
             if OVERLAY_SHOW_GENERATION.load(Ordering::SeqCst) != scheduled_at {
                 log::debug!("Skipping stale overlay hide: a newer session is showing the overlay");
                 return;
@@ -709,10 +825,6 @@ pub fn hide_recording_overlay(app_handle: &AppHandle) {
     }
 }
 
-// Cached "overlay is enabled" flag, kept in sync with overlay_style. Avoids
-// reading the Tauri store on every audio callback (~24 Hz during recording).
-// Defaults to false so the audio path doesn't emit until lib.rs::setup
-// populates the cache from initial settings.
 static OVERLAY_ENABLED: AtomicBool = AtomicBool::new(false);
 
 /// Tracks whether gtk-layer-shell was successfully initialized (Linux only).

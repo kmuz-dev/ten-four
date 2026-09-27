@@ -307,7 +307,8 @@
           "options": {
             "none": "Немає",
             "minimal": "Мінімальна",
-            "live": "У реальному часі"
+            "live": "У реальному часі",
+            "island": "Острів"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "Запис",
     "transcribing": "Обробка...",
     "processing": "Постобробка..."
   },

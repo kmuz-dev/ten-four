@@ -307,7 +307,8 @@
           "options": {
             "none": "Yok",
             "minimal": "Sade",
-            "live": "Canlı"
+            "live": "Canlı",
+            "island": "Ada"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "Kaydediliyor",
     "transcribing": "Transkribe ediliyor...",
     "processing": "İşleniyor..."
   },

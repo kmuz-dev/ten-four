@@ -307,7 +307,8 @@
           "options": {
             "none": "Žádné",
             "minimal": "Minimální",
-            "live": "Živě"
+            "live": "Živě",
+            "island": "Ostrov"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "Nahrávání",
     "transcribing": "Přepisuji...",
     "processing": "Zpracovávám..."
   },

@@ -1015,7 +1015,12 @@ post_process_on_main_hotkey?: boolean;
 /**
  * Turn spoken "new line" / "new paragraph" into line breaks.
  */
-spoken_commands_enabled?: boolean; snippets?: Snippet[]; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; paste_delay_after_ms?: number; 
+spoken_commands_enabled?: boolean; snippets?: Snippet[]; 
+/**
+ * Whether the Smart Format prompt has been added to this install's
+ * prompts (done once; see `ensure_post_process_defaults`).
+ */
+smart_format_seeded?: boolean; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; paste_delay_after_ms?: number; 
 /**
  * Debug-gated ("beta") receipt-sequenced paste: restore the clipboard only
  * after the target app actually reads the transcript, instead of after a
@@ -1102,10 +1107,12 @@ export type OverlayPosition = "top" | "bottom"
 /**
  * Which recording overlay to display. `Minimal` and `Live` share one base
  * (the pill); `Live` grows into the panel that shows live transcription text.
- * `None` hides the overlay entirely. Decoupled from whether the model runs in
- * streaming mode (that is driven purely by model capability).
+ * `Island` grows out of the MacBook notch (a tab from the top edge on displays
+ * without one) and ignores `overlay_position`; off macOS it renders as
+ * `Minimal`. `None` hides the overlay entirely. Decoupled from whether the
+ * model runs in streaming mode (that is driven purely by model capability).
  */
-export type OverlayStyle = "none" | "minimal" | "live"
+export type OverlayStyle = "none" | "minimal" | "live" | "island"
 export type PaginatedHistory = { entries: HistoryEntry[]; has_more: boolean }
 export type PasteMethod = "ctrl_v" | "direct" | "none" | "shift_insert" | "ctrl_shift_v" | "external_script"
 export type PermissionAccess = "allowed" | "denied" | "unknown"

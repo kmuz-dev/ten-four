@@ -307,7 +307,8 @@
           "options": {
             "none": "ללא",
             "minimal": "מינימלי",
-            "live": "בזמן אמת"
+            "live": "בזמן אמת",
+            "island": "אי"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "מקליט",
     "transcribing": "מתמלל...",
     "processing": "מעבד..."
   },

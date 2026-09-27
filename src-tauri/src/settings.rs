@@ -127,14 +127,17 @@ pub enum OverlayPosition {
 
 /// Which recording overlay to display. `Minimal` and `Live` share one base
 /// (the pill); `Live` grows into the panel that shows live transcription text.
-/// `None` hides the overlay entirely. Decoupled from whether the model runs in
-/// streaming mode (that is driven purely by model capability).
+/// `Island` grows out of the MacBook notch (a tab from the top edge on displays
+/// without one) and ignores `overlay_position`; off macOS it renders as
+/// `Minimal`. `None` hides the overlay entirely. Decoupled from whether the
+/// model runs in streaming mode (that is driven purely by model capability).
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum OverlayStyle {
     None,
     Minimal,
     Live,
+    Island,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
@@ -1606,6 +1609,22 @@ mod tests {
             serde_json::from_value(raw.get("overlay_position").unwrap().clone())
                 .expect("legacy \"none\" should deserialize, not error");
         assert_eq!(position, OverlayPosition::Bottom);
+    }
+
+    #[test]
+    fn island_overlay_style_survives_load_and_migration() {
+        // The stored value is the lowercase variant name, and the one-time
+        // overlay migration must leave an explicit style alone.
+        let raw = serde_json::json!({ "selected_model": "", "overlay_style": "island" });
+        let mut settings = get_default_settings();
+        settings.overlay_style = serde_json::from_value(raw["overlay_style"].clone())
+            .expect("\"island\" should deserialize");
+        apply_settings_migrations(&mut settings, &raw);
+        assert_eq!(settings.overlay_style, OverlayStyle::Island);
+        assert_eq!(
+            serde_json::to_value(OverlayStyle::Island).unwrap(),
+            serde_json::json!("island")
+        );
     }
 
     #[test]

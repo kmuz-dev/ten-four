@@ -307,7 +307,8 @@
           "options": {
             "none": "Няма",
             "minimal": "Минимално",
-            "live": "На живо"
+            "live": "На живо",
+            "island": "Остров"
           }
         },
         "position": {
@@ -721,6 +722,7 @@
     }
   },
   "overlay": {
+    "recording": "Записване",
     "transcribing": "Транскрибиране...",
     "processing": "Обработка..."
   },

@@ -14,6 +14,18 @@ import { getLanguageDirection } from "@/lib/utils/rtl";
 
 type OverlayState = "recording" | "streaming" | "transcribing" | "processing";
 
+// Notch of the display the island grows from, in points (overlay.rs
+// `IslandGeometry`). Both are 0 on a display without a notch. Sent only on macOS
+// with the Island style; null means draw the pill instead.
+interface IslandGeometry {
+  notchWidth: number;
+  notchHeight: number;
+}
+
+// How long the island holds its check after a paste before retracting. The
+// backend keeps the window mapped for this plus the retract (overlay.rs).
+const ISLAND_DONE_HOLD_MS = 650;
+
 // Number of reactive bars in the waveform (the simple, smoothed style shared by
 // every overlay form). Mic levels arrive as 16 FFT buckets; we take the first N.
 const WAVE_BARS = 9;
@@ -44,6 +56,14 @@ const RecordingOverlay: React.FC = () => {
   // while overflowing, so the resting first line stays crisp flush under the pill.
   const [overflowing, setOverflowing] = useState(false);
 
+  // Island: geometry for this show (null = pill), whether it has grown out of the
+  // notch yet, and whether it is confirming a paste.
+  const [island, setIsland] = useState<IslandGeometry | null>(null);
+  const [grown, setGrown] = useState(false);
+  const [islandDone, setIslandDone] = useState(false);
+  const islandRef = useRef<IslandGeometry | null>(null);
+  const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const smoothedLevelsRef = useRef<number[]>(Array(16).fill(0));
   // Live-text scroll-back: the text region "sticks" to the newest line while the
   // user is at the bottom; if they scroll up to read history, auto-follow pauses
@@ -54,7 +74,19 @@ const RecordingOverlay: React.FC = () => {
 
   useEffect(() => {
     const setupEventListeners = async () => {
+      const unlistenIsland = await listen<IslandGeometry | null>(
+        "overlay-island",
+        (event) => {
+          islandRef.current = event.payload;
+          setIsland(event.payload);
+        },
+      );
+
       const unlistenShow = await listen("show-overlay", async (event) => {
+        // A new session supersedes a paste confirmation still on screen.
+        if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
+        doneTimerRef.current = null;
+        setIslandDone(false);
         const overlayState = event.payload as OverlayState;
         // Reset synchronously before settings I/O. A fast microphone can emit
         // recording-ready while the awaits below are in flight; resetting after
@@ -89,10 +121,23 @@ const RecordingOverlay: React.FC = () => {
         setIsVisible(true);
       });
 
-      const unlistenHide = await listen("hide-overlay", () => {
-        setIsVisible(false);
-        setCaptureReady(false);
-      });
+      const unlistenHide = await listen<"done" | "dismiss">(
+        "hide-overlay",
+        (event) => {
+          setCaptureReady(false);
+          // The island confirms a paste with a check before retracting; every
+          // other exit (and the pill) leaves at once.
+          if (event.payload === "done" && islandRef.current) {
+            setIslandDone(true);
+            doneTimerRef.current = setTimeout(() => {
+              doneTimerRef.current = null;
+              setIsVisible(false);
+            }, ISLAND_DONE_HOLD_MS);
+            return;
+          }
+          setIsVisible(false);
+        },
+      );
 
       const unlistenReady = await listen("recording-ready", () => {
         setElapsed(0);
@@ -122,6 +167,7 @@ const RecordingOverlay: React.FC = () => {
       });
 
       return () => {
+        unlistenIsland();
         unlistenShow();
         unlistenHide();
         unlistenReady();
@@ -133,6 +179,24 @@ const RecordingOverlay: React.FC = () => {
 
     setupEventListeners();
   }, []);
+
+  // Grow out of the notch one painted frame after becoming visible, so the
+  // island always animates from its resting (notch-sized) shape rather than
+  // mounting already open.
+  useEffect(() => {
+    if (!isVisible) {
+      setGrown(false);
+      return;
+    }
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setGrown(true));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, [isVisible]);
 
   // Elapsed capture timer starts only once microphone samples are flowing.
   useEffect(() => {
@@ -156,6 +220,53 @@ const RecordingOverlay: React.FC = () => {
     pinnedRef.current = true;
     setOverflowing(false);
   }, [session]);
+
+  // ---- Island: the notch grows into a black tab; the voice is a red line
+  // glowing along its bottom edge. It stays mounted while hidden so it can
+  // retract back into the notch instead of vanishing.
+  if (island && state !== "streaming") {
+    const working = state === "transcribing" || state === "processing";
+    const phase = !grown
+      ? "rest"
+      : islandDone
+        ? "done"
+        : working
+          ? "working"
+          : "listening";
+    const mean = levels.reduce((sum, v) => sum + v, 0) / levels.length;
+    const level = captureReady
+      ? Math.max(0.06, Math.min(1, Math.pow(mean, 0.7) * 1.6))
+      : 0;
+    const style = {
+      "--nw": `${island.notchWidth}px`,
+      "--nh": `${island.notchHeight}px`,
+      "--level": level.toFixed(3),
+    } as React.CSSProperties;
+
+    return (
+      <div className="island-stage" style={style}>
+        <div
+          className={`island ${phase}`}
+          role="status"
+          aria-label={
+            working ? t("overlay.transcribing") : t("overlay.recording")
+          }
+        >
+          <i className="island-shoulder left" />
+          <div className="island-body">
+            <span
+              className={`island-dot ${captureReady ? "ready" : "arming"}`}
+            />
+            <svg className="island-check" viewBox="0 0 14 14" aria-hidden>
+              <path d="M2.5 7.4 5.6 10.3 11.5 3.8" />
+            </svg>
+            <i className="island-line" />
+          </div>
+          <i className="island-shoulder right" />
+        </div>
+      </div>
+    );
+  }
 
   if (!isVisible) return null;
 

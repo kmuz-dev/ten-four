@@ -28,6 +28,10 @@ export const ShowOverlay: React.FC<ShowOverlayProps> = React.memo(
         value: "live",
         label: t("settings.advanced.overlay.style.options.live"),
       },
+      {
+        value: "island",
+        label: t("settings.advanced.overlay.style.options.island"),
+      },
     ];
 
     const positionOptions = [
@@ -66,7 +70,8 @@ export const ShowOverlay: React.FC<ShowOverlayProps> = React.memo(
           />
         </SettingContainer>
 
-        {selectedStyle !== "none" && (
+        {/* The island always sits in the notch, so position doesn't apply. */}
+        {selectedStyle !== "none" && selectedStyle !== "island" && (
           <SettingContainer
             title={t("settings.advanced.overlay.position.title")}
             description={t("settings.advanced.overlay.position.description")}
