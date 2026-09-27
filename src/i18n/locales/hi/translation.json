@@ -16,7 +16,8 @@
     "postProcessing": "पोस्ट प्रोसेस",
     "history": "इतिहास",
     "debug": "डिबग",
-    "about": "के बारे में"
+    "about": "के बारे में",
+    "snippets": "Snippets"
   },
   "onboarding": {
     "subtitle": "शुरू करने के लिए, एक ट्रांसक्रिप्शन मॉडल चुनें",
@@ -452,6 +453,10 @@
         "cancel": "रद्द करें",
         "selectToEdit": "जानकारी देखने और बदलाव करने के लिए, ऊपर कोई प्रॉम्प्ट चुनें.",
         "createFirst": "अपना पहला पोस्ट-प्रोसेसिंग प्रॉम्प्ट बनाने के लिए, ऊपर 'नया प्रॉम्प्ट बनाएं' पर क्लिक करें."
+      },
+      "everyDictation": {
+        "title": "Format every dictation",
+        "description": "Also run post-processing on the main transcribe shortcut. The raw transcript is still kept in History."
       }
     },
     "history": {
@@ -635,6 +640,24 @@
           "description": "डिवाइस पर ही मशीन लर्निंग इन्फ़रेंस के लिए हाई-परफ़ॉर्मेंस टेंसर लाइब्रेरी",
           "details": "Handy का लोकल स्पीच-टू-टेक्स्ट transcribe.cpp और ggml पर आधारित है. Georgi Gerganov और योगदान देने वालों के शानदार काम के लिए धन्यवाद."
         }
+      }
+    },
+    "snippets": {
+      "title": "Snippets",
+      "description": "Say a trigger phrase while dictating and Handy inserts the saved text exactly as written, even when post-processing rewrites the rest.",
+      "triggerLabel": "Trigger phrase",
+      "triggerPlaceholder": "my email",
+      "expansionLabel": "Text to insert",
+      "expansionPlaceholder": "you@example.com",
+      "add": "Add snippet",
+      "empty": "No snippets yet. Add one above.",
+      "remove": "Remove snippet {{trigger}}",
+      "removeShort": "Remove",
+      "duplicate": "A snippet for \"{{trigger}}\" already exists",
+      "commandsTitle": "Voice commands",
+      "spokenCommands": {
+        "title": "Spoken line breaks",
+        "description": "Say \"new line\" or \"new paragraph\" to insert a line break."
       }
     }
   },

@@ -20,6 +20,7 @@ mod secure_input;
 mod settings;
 mod shortcut;
 mod signal_handle;
+mod text_rules;
 mod transcription_coordinator;
 mod tray;
 mod tray_i18n;
@@ -691,6 +692,9 @@ pub fn run(cli_args: CliArgs) {
             shortcut::resume_all_bindings,
             shortcut::change_mute_while_recording_setting,
             shortcut::change_append_trailing_space_setting,
+            shortcut::change_post_process_on_main_hotkey_setting,
+            shortcut::change_spoken_commands_enabled_setting,
+            shortcut::update_snippets,
             shortcut::change_lazy_stream_close_setting,
             shortcut::change_vad_enabled_setting,
             shortcut::change_vad_backend_setting,

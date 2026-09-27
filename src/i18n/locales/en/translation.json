@@ -16,7 +16,8 @@
     "postProcessing": "Post Process",
     "history": "History",
     "debug": "Debug",
-    "about": "About"
+    "about": "About",
+    "snippets": "Snippets"
   },
   "onboarding": {
     "subtitle": "To get started, choose a transcription model",
@@ -452,6 +453,10 @@
         "cancel": "Cancel",
         "selectToEdit": "Select a prompt above to view and edit its details.",
         "createFirst": "Click 'Create New Prompt' above to create your first post-processing prompt."
+      },
+      "everyDictation": {
+        "title": "Format every dictation",
+        "description": "Also run post-processing on the main transcribe shortcut. The raw transcript is still kept in History."
       }
     },
     "history": {
@@ -635,6 +640,24 @@
           "description": "High-performance tensor library for on-device machine learning inference",
           "details": "Handy's local speech-to-text is built on transcribe.cpp and ggml. Thanks to the amazing work by Georgi Gerganov and contributors."
         }
+      }
+    },
+    "snippets": {
+      "title": "Snippets",
+      "description": "Say a trigger phrase while dictating and Handy inserts the saved text exactly as written, even when post-processing rewrites the rest.",
+      "triggerLabel": "Trigger phrase",
+      "triggerPlaceholder": "my email",
+      "expansionLabel": "Text to insert",
+      "expansionPlaceholder": "you@example.com",
+      "add": "Add snippet",
+      "empty": "No snippets yet. Add one above.",
+      "remove": "Remove snippet {{trigger}}",
+      "removeShort": "Remove",
+      "duplicate": "A snippet for \"{{trigger}}\" already exists",
+      "commandsTitle": "Voice commands",
+      "spokenCommands": {
+        "title": "Spoken line breaks",
+        "description": "Say \"new line\" or \"new paragraph\" to insert a line break."
       }
     }
   },

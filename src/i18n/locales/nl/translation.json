@@ -16,7 +16,8 @@
     "postProcessing": "Naverwerking",
     "history": "Geschiedenis",
     "debug": "Probleemoplossing",
-    "about": "Over Handy"
+    "about": "Over Handy",
+    "snippets": "Snippets"
   },
   "onboarding": {
     "subtitle": "Kies een transcriptiemodel om aan de slag te gaan",
@@ -452,6 +453,10 @@
         "cancel": "Annuleren",
         "selectToEdit": "Selecteer hierboven een prompt om de details te bekijken en te bewerken.",
         "createFirst": "Klik hierboven op 'Nieuwe prompt maken' om je eerste naverwerkingsprompt aan te maken."
+      },
+      "everyDictation": {
+        "title": "Format every dictation",
+        "description": "Also run post-processing on the main transcribe shortcut. The raw transcript is still kept in History."
       }
     },
     "history": {
@@ -635,6 +640,24 @@
           "description": "Krachtige tensorbibliotheek voor lokale AI-verwerking",
           "details": "Handy's lokale spraak-naar-tekst is gebouwd op transcribe.cpp en ggml. Met dank aan het geweldige werk van Georgi Gerganov en alle bijdragers."
         }
+      }
+    },
+    "snippets": {
+      "title": "Snippets",
+      "description": "Say a trigger phrase while dictating and Handy inserts the saved text exactly as written, even when post-processing rewrites the rest.",
+      "triggerLabel": "Trigger phrase",
+      "triggerPlaceholder": "my email",
+      "expansionLabel": "Text to insert",
+      "expansionPlaceholder": "you@example.com",
+      "add": "Add snippet",
+      "empty": "No snippets yet. Add one above.",
+      "remove": "Remove snippet {{trigger}}",
+      "removeShort": "Remove",
+      "duplicate": "A snippet for \"{{trigger}}\" already exists",
+      "commandsTitle": "Voice commands",
+      "spokenCommands": {
+        "title": "Spoken line breaks",
+        "description": "Say \"new line\" or \"new paragraph\" to insert a line break."
       }
     }
   },

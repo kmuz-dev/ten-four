@@ -16,7 +16,8 @@
     "postProcessing": "Постобробка",
     "history": "Історія",
     "debug": "Дебаг",
-    "about": "Інфо"
+    "about": "Інфо",
+    "snippets": "Snippets"
   },
   "onboarding": {
     "subtitle": "Для початку оберіть модель транскрипції",
@@ -452,6 +453,10 @@
         "cancel": "Скасувати",
         "selectToEdit": "Оберіть промпт вище для перегляду та редагування його деталей.",
         "createFirst": "Натисніть «Створити новий промпт» вище, щоб створити ваш перший промпт постобробки."
+      },
+      "everyDictation": {
+        "title": "Format every dictation",
+        "description": "Also run post-processing on the main transcribe shortcut. The raw transcript is still kept in History."
       }
     },
     "history": {
@@ -635,6 +640,24 @@
       "whatsNewUpdates": {
         "label": "Показувати новини",
         "description": "Показувати примітки до випуску після оновлень Handy"
+      }
+    },
+    "snippets": {
+      "title": "Snippets",
+      "description": "Say a trigger phrase while dictating and Handy inserts the saved text exactly as written, even when post-processing rewrites the rest.",
+      "triggerLabel": "Trigger phrase",
+      "triggerPlaceholder": "my email",
+      "expansionLabel": "Text to insert",
+      "expansionPlaceholder": "you@example.com",
+      "add": "Add snippet",
+      "empty": "No snippets yet. Add one above.",
+      "remove": "Remove snippet {{trigger}}",
+      "removeShort": "Remove",
+      "duplicate": "A snippet for \"{{trigger}}\" already exists",
+      "commandsTitle": "Voice commands",
+      "spokenCommands": {
+        "title": "Spoken line breaks",
+        "description": "Say \"new line\" or \"new paragraph\" to insert a line break."
       }
     }
   },

@@ -16,7 +16,8 @@
     "postProcessing": "後處理",
     "history": "歷史紀錄",
     "debug": "偵錯",
-    "about": "關於"
+    "about": "關於",
+    "snippets": "Snippets"
   },
   "onboarding": {
     "subtitle": "首先，請選擇一種模型",
@@ -452,6 +453,10 @@
         "cancel": "取消",
         "selectToEdit": "選擇上方的提示詞以檢視和編輯其詳細資訊",
         "createFirst": "點選上方的「建立新提示詞」來建立您的第一個後處理提示詞"
+      },
+      "everyDictation": {
+        "title": "Format every dictation",
+        "description": "Also run post-processing on the main transcribe shortcut. The raw transcript is still kept in History."
       }
     },
     "history": {
@@ -635,6 +640,24 @@
       "whatsNewUpdates": {
         "label": "顯示新功能",
         "description": "Handy 更新後顯示版本資訊"
+      }
+    },
+    "snippets": {
+      "title": "Snippets",
+      "description": "Say a trigger phrase while dictating and Handy inserts the saved text exactly as written, even when post-processing rewrites the rest.",
+      "triggerLabel": "Trigger phrase",
+      "triggerPlaceholder": "my email",
+      "expansionLabel": "Text to insert",
+      "expansionPlaceholder": "you@example.com",
+      "add": "Add snippet",
+      "empty": "No snippets yet. Add one above.",
+      "remove": "Remove snippet {{trigger}}",
+      "removeShort": "Remove",
+      "duplicate": "A snippet for \"{{trigger}}\" already exists",
+      "commandsTitle": "Voice commands",
+      "spokenCommands": {
+        "title": "Spoken line breaks",
+        "description": "Say \"new line\" or \"new paragraph\" to insert a line break."
       }
     }
   },

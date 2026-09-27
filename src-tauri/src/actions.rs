@@ -81,9 +81,26 @@ fn strip_think_block(s: &str) -> &str {
 }
 
 /// Build a system prompt from the user's prompt template.
-/// Removes `${output}` placeholder since the transcription is sent as the user message.
+/// The transcription is sent as the user message (see [`wrap_transcript`]), so
+/// the `${output}` placeholder is removed — together with a `<transcript>`
+/// wrapper around it, which would otherwise leave an empty tag pair that small
+/// models read as "the transcript is empty".
 fn build_system_prompt(prompt_template: &str) -> String {
-    prompt_template.replace("${output}", "").trim().to_string()
+    static TRANSCRIPT_BLOCK: Lazy<regex::Regex> = Lazy::new(|| {
+        regex::Regex::new(r"<transcript>\s*\$\{output\}\s*</transcript>").expect("valid regex")
+    });
+    TRANSCRIPT_BLOCK
+        .replace_all(prompt_template, "")
+        .replace("${output}", "")
+        .trim()
+        .to_string()
+}
+
+/// The user message for structured post-processing: the transcript inside the
+/// same `<transcript>` tags the prompts tell the model never to take
+/// instructions from.
+fn wrap_transcript(transcription: &str) -> String {
+    format!("<transcript>\n{}\n</transcript>", transcription)
 }
 
 /// Returns `true` when a transcription has no meaningful content to
@@ -195,7 +212,7 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         debug!("Using structured outputs for provider '{}'", provider.id);
 
         let system_prompt = build_system_prompt(&prompt);
-        let user_content = transcription.to_string();
+        let user_content = wrap_transcript(transcription);
 
         // Handle Apple Intelligence separately since it uses native Swift APIs
         if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
@@ -426,43 +443,65 @@ pub(crate) async fn process_transcription_output(
     post_process: bool,
 ) -> ProcessedTranscription {
     let settings = get_settings(app);
-    let mut final_text = transcription.to_string();
-    let mut post_processed_text: Option<String> = None;
-    let mut post_process_prompt: Option<String> = None;
 
     // Resolve the language the transcription actually ran in (the persisted
     // intent coerced against the loaded model's capabilities) so OpenCC keys off
     // the effective language rather than a possibly-stale intent.
     let effective_language = resolve_effective_language(app, &settings);
-    if let Some(converted_text) =
-        maybe_convert_chinese_variant(&effective_language, transcription).await
-    {
-        final_text = converted_text;
-    }
+    let converted = maybe_convert_chinese_variant(&effective_language, transcription)
+        .await
+        .unwrap_or_else(|| transcription.to_string());
+
+    format_transcription(&settings, transcription, &converted, post_process).await
+}
+
+/// Turn a transcript into the text to paste: deterministic rules (spoken
+/// commands, snippets), then the LLM when `post_process` is set. Snippets are
+/// hidden behind placeholders while the LLM runs; if the LLM fails or loses a
+/// placeholder, the rules-only text is used instead (fail open).
+///
+/// `original` is the raw transcript as recorded in history; `text` is it after
+/// any script conversion. Needs no `AppHandle`, so the eval harness runs it.
+async fn format_transcription(
+    settings: &AppSettings,
+    original: &str,
+    text: &str,
+    post_process: bool,
+) -> ProcessedTranscription {
+    let with_commands = if settings.spoken_commands_enabled {
+        crate::text_rules::apply_spoken_commands(text)
+    } else {
+        text.to_string()
+    };
+    let protected = crate::text_rules::protect_snippets(&with_commands, &settings.snippets);
+    let rules_text = protected.expanded();
 
     if post_process {
-        if let Some(processed_text) = post_process_transcription(&settings, &final_text).await {
-            post_processed_text = Some(processed_text.clone());
-            final_text = processed_text;
-
-            if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
-                if let Some(prompt) = settings
-                    .post_process_prompts
-                    .iter()
-                    .find(|prompt| &prompt.id == prompt_id)
-                {
-                    post_process_prompt = Some(prompt.prompt.clone());
+        if let Some(llm_text) = post_process_transcription(settings, &protected.text).await {
+            match protected.restore(&llm_text) {
+                Some(final_text) => {
+                    let prompt = settings
+                        .post_process_selected_prompt_id
+                        .as_ref()
+                        .and_then(|id| settings.post_process_prompts.iter().find(|p| &p.id == id))
+                        .map(|p| p.prompt.clone());
+                    return ProcessedTranscription {
+                        post_processed_text: Some(final_text.clone()),
+                        final_text,
+                        post_process_prompt: prompt,
+                    };
+                }
+                None => {
+                    warn!("Post-processing dropped a snippet placeholder; using rules-only text")
                 }
             }
         }
-    } else if final_text != transcription {
-        post_processed_text = Some(final_text.clone());
     }
 
     ProcessedTranscription {
-        final_text,
-        post_processed_text,
-        post_process_prompt,
+        post_processed_text: (rules_text != original).then(|| rules_text.clone()),
+        final_text: rules_text,
+        post_process_prompt: None,
     }
 }
 
@@ -669,7 +708,10 @@ impl ShortcutAction for TranscribeAction {
         play_feedback_sound(app, SoundType::Stop);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
-        let post_process = self.post_process;
+        let post_process = self.post_process || {
+            let settings = get_settings(app);
+            settings.post_process_enabled && settings.post_process_on_main_hotkey
+        };
         let cancel_generation = rm.cancel_generation();
 
         tauri::async_runtime::spawn(async move {
@@ -950,11 +992,136 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map
 });
 
+/// Smart Format eval: sends every case in `eval/smart_format_cases.json`
+/// through the same `format_transcription` path a dictation takes, against a
+/// real LLM. Ignored by default because it needs a provider; run it with
+/// `scripts/eval-smart-format.sh`.
+#[cfg(test)]
+mod smart_format_eval {
+    use super::format_transcription;
+    use crate::settings::{get_default_settings, Snippet};
+    use std::time::Instant;
+
+    #[derive(serde::Deserialize)]
+    struct Case {
+        name: String,
+        input: String,
+        expected: Option<String>,
+        #[serde(default)]
+        contains: Vec<String>,
+        #[serde(default)]
+        absent: Vec<String>,
+        #[serde(default)]
+        snippets: Vec<Snippet>,
+    }
+
+    fn normalize(s: &str) -> String {
+        s.trim()
+            .lines()
+            .map(|l| l.split_whitespace().collect::<Vec<_>>().join(" "))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    fn failures(case: &Case, got: &str) -> Vec<String> {
+        let mut out = Vec::new();
+        if let Some(expected) = &case.expected {
+            if normalize(got) != normalize(expected) {
+                out.push(format!("expected {:?}", expected));
+            }
+        }
+        for needle in &case.contains {
+            if !got.contains(needle.as_str()) {
+                out.push(format!("missing {:?}", needle));
+            }
+        }
+        for needle in &case.absent {
+            if got.contains(needle.as_str()) {
+                out.push(format!("should not contain {:?}", needle));
+            }
+        }
+        out
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[ignore = "calls a real LLM; run scripts/eval-smart-format.sh"]
+    async fn smart_format_eval() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/eval/smart_format_cases.json");
+        let cases: Vec<Case> =
+            serde_json::from_str(&std::fs::read_to_string(path).expect("cases file"))
+                .expect("cases file is valid JSON");
+
+        let provider = std::env::var("EVAL_PROVIDER").unwrap_or_else(|_| "custom".into());
+        let mut settings = get_default_settings();
+        settings.post_process_provider_id = provider.clone();
+        if let Ok(url) = std::env::var("EVAL_BASE_URL") {
+            let p = settings
+                .post_process_providers
+                .iter_mut()
+                .find(|p| p.id == provider)
+                .expect("EVAL_PROVIDER is a known provider id");
+            p.base_url = url;
+        }
+        settings.post_process_models.insert(
+            provider.clone(),
+            std::env::var("EVAL_MODEL").expect("set EVAL_MODEL"),
+        );
+        if let Ok(key) = std::env::var("EVAL_API_KEY") {
+            settings.post_process_api_keys.insert(provider.clone(), key);
+        }
+
+        let mut timings = Vec::new();
+        let mut failed = 0;
+        for case in &cases {
+            settings.snippets = case.snippets.clone();
+            // Mirror the transcription stage, which strips fillers before the
+            // output step runs (English-only model, as on this laptop).
+            let transcript = crate::audio_toolkit::remove_filler_words(
+                &case.input,
+                &crate::audio_toolkit::OutputLanguageEvidence::ModelConstrained("en".into()),
+                &None,
+                true,
+            );
+            let started = Instant::now();
+            let result = format_transcription(&settings, &transcript, &transcript, true).await;
+            let ms = started.elapsed().as_millis();
+            timings.push(ms);
+            let used_llm = result.post_process_prompt.is_some();
+            let problems = failures(case, &result.final_text);
+            if problems.is_empty() {
+                println!("PASS {:>6}ms  {}", ms, case.name);
+            } else {
+                failed += 1;
+                println!("FAIL {:>6}ms  {}", ms, case.name);
+                for p in problems {
+                    println!("        {}", p);
+                }
+                println!(
+                    "        got {:?}{}",
+                    result.final_text,
+                    if used_llm { "" } else { " (LLM not used)" }
+                );
+            }
+        }
+        timings.sort_unstable();
+        println!(
+            "\n{}/{} passed · median {}ms · max {}ms · provider {} · model {}",
+            cases.len() - failed,
+            cases.len(),
+            timings[timings.len() / 2],
+            timings.last().unwrap(),
+            provider,
+            settings.post_process_models[&provider],
+        );
+        assert_eq!(failed, 0, "{} Smart Format case(s) failed", failed);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        complete_unless_cancelled, is_blank_transcription, should_use_streaming_overlay,
-        strip_think_block,
+        build_system_prompt, complete_unless_cancelled, is_blank_transcription,
+        should_use_streaming_overlay, strip_think_block,
     };
     use crate::settings::OverlayStyle;
     use std::future;
@@ -1002,6 +1169,17 @@ mod tests {
 
         cancel_thread.join().unwrap();
         assert_eq!(result, None);
+    }
+
+    #[test]
+    fn system_prompt_drops_transcript_wrapper() {
+        let prompt = "<transcript>\n${output}\n</transcript>\n\nClean it.";
+        assert_eq!(build_system_prompt(prompt), "Clean it.");
+    }
+
+    #[test]
+    fn system_prompt_drops_bare_placeholder() {
+        assert_eq!(build_system_prompt("Clean this: ${output}"), "Clean this:");
     }
 
     #[test]

@@ -173,10 +173,17 @@ fn build_headers(provider: &PostProcessProvider, api_key: &str) -> Result<Header
 }
 
 /// Create an HTTP client with provider-specific headers
+/// Upper bound on one LLM request. Post-processing sits between the user and
+/// their pasted text, so a stalled provider must give up and let the caller
+/// paste the rule-cleaned transcript instead of hanging indefinitely.
+// ponytail: fixed value; make it a setting if a slow local model needs longer.
+const REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(12);
+
 fn create_client(provider: &PostProcessProvider, api_key: &str) -> Result<reqwest::Client, String> {
     let headers = build_headers(provider, api_key)?;
     reqwest::Client::builder()
         .default_headers(headers)
+        .timeout(REQUEST_TIMEOUT)
         .build()
         .map_err(|e| report_reqwest_error("Failed to build HTTP client", &e))
 }

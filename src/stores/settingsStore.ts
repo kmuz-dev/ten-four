@@ -3,6 +3,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 import { listen } from "@tauri-apps/api/event";
 import type {
   AppSettings as Settings,
+  Snippet,
   AudioDevice,
   TranscribeAcceleratorSetting,
   OrtAcceleratorSetting,
@@ -162,6 +163,11 @@ const settingUpdaters: {
     commands.changeMuteWhileRecordingSetting(value as boolean),
   append_trailing_space: (value) =>
     commands.changeAppendTrailingSpaceSetting(value as boolean),
+  post_process_on_main_hotkey: (value) =>
+    commands.changePostProcessOnMainHotkeySetting(value as boolean),
+  spoken_commands_enabled: (value) =>
+    commands.changeSpokenCommandsEnabledSetting(value as boolean),
+  snippets: (value) => commands.updateSnippets(value as Snippet[]),
   log_level: (value) => commands.setLogLevel(value as any),
   app_language: (value) => commands.changeAppLanguageSetting(value as string),
   theme: (value) => commands.changeThemeSetting(value as string),
