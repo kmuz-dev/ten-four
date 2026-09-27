@@ -58,32 +58,48 @@ pub fn apply_spoken_commands(text: &str) -> String {
 pub struct ProtectedText {
     pub text: String,
     expansions: Vec<String>,
+    expanded: String,
 }
+
+static PLACEHOLDER: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{\{S(\d+)\}\}").expect("valid regex"));
 
 fn placeholder(index: usize) -> String {
     format!("{{{{S{}}}}}", index + 1)
 }
 
 impl ProtectedText {
-    /// Put the snippet text back. Returns `None` when `text` (usually LLM
-    /// output) lost or duplicated a placeholder — the caller should then fall
-    /// back to the rules-only text rather than paste a mangled result.
+    /// Put the snippet text back into `text` (usually LLM output), in one pass
+    /// so expansions are never re-scanned. Returns `None` unless every
+    /// placeholder appears exactly once — the caller then falls back to
+    /// [`Self::expanded`] rather than paste a mangled result.
     pub fn restore(&self, text: &str) -> Option<String> {
-        let mut out = text.to_string();
-        for (i, expansion) in self.expansions.iter().enumerate() {
-            let token = placeholder(i);
-            if out.matches(&token).count() != 1 {
-                return None;
+        let mut seen = vec![0usize; self.expansions.len()];
+        let mut valid = true;
+        let out = PLACEHOLDER.replace_all(text, |caps: &regex::Captures| {
+            let slot = caps[1]
+                .parse::<usize>()
+                .ok()
+                .and_then(|n| n.checked_sub(1))
+                .filter(|&i| i < self.expansions.len());
+            match slot {
+                Some(i) => {
+                    seen[i] += 1;
+                    self.expansions[i].clone()
+                }
+                // Not ours (e.g. the speaker literally said "{{S9}}"): a
+                // placeholder we can't account for means we can't trust it.
+                None => {
+                    valid = false;
+                    caps[0].to_string()
+                }
             }
-            out = out.replacen(&token, expansion, 1);
-        }
-        Some(out)
+        });
+        (valid && seen.iter().all(|&n| n == 1)).then(|| out.into_owned())
     }
 
     /// The text with every snippet expanded (no LLM involved).
-    pub fn expanded(&self) -> String {
-        self.restore(&self.text)
-            .expect("placeholders inserted by protect_snippets are unique")
+    pub fn expanded(&self) -> &str {
+        &self.expanded
     }
 }
 
@@ -143,6 +159,7 @@ pub fn protect_snippets(text: &str, snippets: &[Snippet]) -> ProtectedText {
     let text_words = words(text);
     let mut out = String::with_capacity(text.len());
     let mut expansions = Vec::new();
+    let mut expanded = String::with_capacity(text.len());
     let mut last = 0;
     let mut i = 0;
     while i < text_words.len() {
@@ -154,6 +171,8 @@ pub fn protect_snippets(text: &str, snippets: &[Snippet]) -> ProtectedText {
             Some((keys, expansion)) => {
                 out.push_str(&text[last..text_words[i].start]);
                 out.push_str(&placeholder(expansions.len()));
+                expanded.push_str(&text[last..text_words[i].start]);
+                expanded.push_str(expansion);
                 expansions.push(expansion.to_string());
                 last = text_words[i + keys.len() - 1].end;
                 i += keys.len();
@@ -162,9 +181,11 @@ pub fn protect_snippets(text: &str, snippets: &[Snippet]) -> ProtectedText {
         }
     }
     out.push_str(&text[last..]);
+    expanded.push_str(&text[last..]);
     ProtectedText {
         text: out,
         expansions,
+        expanded,
     }
 }
 
@@ -258,6 +279,29 @@ mod tests {
         let p = protect_snippets("sign off", &[snippet("sign off", "Best")]);
         assert_eq!(p.restore("Goodbye"), None);
         assert_eq!(p.restore("{{S1}} {{S1}}"), None);
+    }
+
+    #[test]
+    fn expansion_containing_a_placeholder_does_not_break_anything() {
+        let p = protect_snippets(
+            "alpha and beta",
+            &[snippet("alpha", "x {{S2}} y"), snippet("beta", "B")],
+        );
+        assert_eq!(p.expanded(), "x {{S2}} y and B");
+        assert_eq!(p.restore(&p.text).as_deref(), Some("x {{S2}} y and B"));
+    }
+
+    #[test]
+    fn literal_placeholder_in_speech_falls_back_safely() {
+        let p = protect_snippets("say {{S1}} then sign off", &[snippet("sign off", "Bye")]);
+        assert_eq!(p.expanded(), "say {{S1}} then Bye");
+        assert_eq!(p.restore(&p.text), None);
+    }
+
+    #[test]
+    fn unknown_placeholder_is_rejected() {
+        let p = protect_snippets("sign off", &[snippet("sign off", "Bye")]);
+        assert_eq!(p.restore("{{S1}} {{S7}}"), None);
     }
 
     #[test]

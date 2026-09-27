@@ -25,6 +25,9 @@ use tauri::Manager;
 use tauri::{AppHandle, Emitter};
 
 const CANCELLATION_POLL_INTERVAL: Duration = Duration::from_millis(25);
+/// Longest a dictation waits on LLM post-processing before pasting the
+/// rules-only text. Does not bound Apple Intelligence, a blocking native call.
+const POST_PROCESS_BUDGET: Duration = Duration::from_secs(12);
 
 #[derive(Clone, serde::Serialize)]
 struct RecordingErrorEvent {
@@ -474,10 +477,24 @@ async fn format_transcription(
         text.to_string()
     };
     let protected = crate::text_rules::protect_snippets(&with_commands, &settings.snippets);
-    let rules_text = protected.expanded();
+    let rules_text = protected.expanded().to_string();
 
     if post_process {
-        if let Some(llm_text) = post_process_transcription(settings, &protected.text).await {
+        // One budget for the whole LLM step: a timed-out structured request
+        // is otherwise retried in legacy mode, doubling the wait.
+        let llm = tokio::time::timeout(
+            POST_PROCESS_BUDGET,
+            post_process_transcription(settings, &protected.text),
+        )
+        .await
+        .unwrap_or_else(|_| {
+            warn!(
+                "Post-processing exceeded {:?}; using rules-only text",
+                POST_PROCESS_BUDGET
+            );
+            None
+        });
+        if let Some(llm_text) = llm {
             match protected.restore(&llm_text) {
                 Some(final_text) => {
                     let prompt = settings

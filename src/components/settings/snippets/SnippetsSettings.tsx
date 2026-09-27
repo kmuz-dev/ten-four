@@ -9,13 +9,13 @@ import { Textarea } from "../../ui/Textarea";
 import { Button } from "../../ui/Button";
 import { SpokenCommands } from "../SpokenCommands";
 
-// Matching ignores case and punctuation, so compare triggers the same way.
+// Mirror text_rules.rs: words are runs of letters, digits and apostrophes;
+// apostrophes are dropped and case is ignored.
 const triggerKey = (trigger: string) =>
-  trigger
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  (trigger.toLowerCase().match(/[\p{L}\p{N}'’]+/gu) ?? [])
+    .map((word) => word.replace(/['’]/g, ""))
+    .filter(Boolean)
+    .join(" ");
 
 export const SnippetsSettings: React.FC = () => {
   const { t } = useTranslation();
