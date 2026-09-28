@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img"
+     aria-label="Typeform app icon">
+
+  <defs>
+    <linearGradient id="iconBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3C3C40"/>
+      <stop offset="1" stop-color="#1B1B1D"/>
+    </linearGradient>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#505056"/>
+      <stop offset="1" stop-color="#29292D"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#77777D"/>
+      <stop offset="1" stop-color="#4A4A50"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#64646A"/>
+      <stop offset="1" stop-color="#303034"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="64" y="64" width="896" height="896" rx="214" fill="url(#iconBg)"/>
+  <rect x="70" y="70" width="884" height="884" rx="208" fill="none"
+        stroke="#FFFFFF" stroke-opacity=".10" stroke-width="8"/>
+
+  <path d="M204 598 C204 532 254 494 312 512 C366 528 382 590 346 634
+           C316 672 230 668 210 624 C206 616 204 607 204 598 Z" fill="url(#top)"/>
+  <rect x="352" y="438" width="126" height="282" rx="63" fill="url(#top)"/>
+  <path d="M516 384 H634 Q674 384 674 424 V720 H516 Z" fill="url(#base)"/>
+  <rect x="710" y="316" width="106" height="404" rx="12" fill="url(#edge)"/>
+  <rect x="332" y="674" width="512" height="86" rx="18" fill="#333337"/>
+  <circle cx="596" cy="626" r="31" fill="#171719"/><circle cx="596" cy="626" r="25" fill="none" stroke="#737379" stroke-width="6"/><circle cx="596" cy="626" r="22" fill="#202023"/>
+</svg>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img"
+     aria-label="Keystone live mark">
+
+  <defs>
+    <linearGradient id="iconBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3C3C40"/>
+      <stop offset="1" stop-color="#1B1B1D"/>
+    </linearGradient>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#505056"/>
+      <stop offset="1" stop-color="#29292D"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#77777D"/>
+      <stop offset="1" stop-color="#4A4A50"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#64646A"/>
+      <stop offset="1" stop-color="#303034"/>
+    </linearGradient>
+  </defs>
+
+
+  <path d="M316 210 H708 C760 210 790 246 798 298 L840 714
+           C848 784 805 824 742 824 H282 C219 824 176 784 184 714
+           L226 298 C234 246 264 210 316 210 Z" fill="url(#base)"/>
+  <path d="M316 246 H708 C738 246 758 268 762 302 L792 690
+           C797 742 768 772 720 772 H304 C256 772 227 742 232 690
+           L262 302 C266 268 286 246 316 246 Z" fill="#202023" opacity=".62"/>
+  <rect x="286" y="244" width="452" height="446" rx="108" fill="url(#top)"/>
+  <rect x="294" y="252" width="436" height="430" rx="100" fill="none"
+        stroke="#FFFFFF" stroke-opacity=".12" stroke-width="8"/>
+  <circle cx="642" cy="344" r="32" fill="#171719"/><circle cx="642" cy="344" r="26" fill="none" stroke="#FF8A70" stroke-width="6"/><circle cx="642" cy="344" r="23" fill="#FF4A26"/>
+</svg>

@@ -1,4 +1,4 @@
-# Design System - Handy (Tally Light)
+# Design System - Ten-Four (Tally Light)
 
 This is the North Star for every visual, motion and sound decision in this fork.
 Read it before changing any UI.
@@ -13,13 +13,13 @@ The interactive prototype that these decisions came from lives at https://claude
 
 ## The One Thing
 
-Handy is a quiet instrument that looks like Apple shipped it.
+Ten-Four is a quiet instrument that looks like Apple shipped it.
 Someone seeing it for the first time should feel "this is serious, and it's quiet," and trust it before it has done anything.
 Every decision below serves that sentence.
 
 ## Aesthetic Direction
 
-- **Direction:** "Tally Light." Graphite everywhere, controls in the system accent, and one color Handy owns: the red record light that means you are live.
+- **Direction:** "Tally Light." Graphite everywhere, controls in the system accent, and one color Ten-Four owns: the red record light that means you are live.
 - **Decoration level:** minimal. Type, spacing and material do the work.
 - **Mood:** calm, exact, native. Never cute, never "AI magic" (no orbs, gradient blobs or sparkles).
 - **What we left behind:** the pink palette and the cartoon hand, which read as toy-ish.
@@ -34,7 +34,7 @@ Every decision below serves that sentence.
 ## Color
 
 - **Approach:** restrained. Monochrome graphite plus a single owned color.
-- **Tally (record light):** `#FF4A26` on light surfaces, `#FF6242` on dark surfaces and the overlay (`--color-tally-hud`). Used only for "you are live": the recording dot, the glow line and the menu bar LED. Never for buttons, links or decoration.
+- **Tally (record light and brand punctuation):** `#FF4A26` on light surfaces, `#FF6242` on dark surfaces and the overlay (`--color-tally-hud`). Outside locked identity artwork, it is used only for "you are live": the recording dot, the glow line and the menu bar control. The `10.4` wordmark period and full-color recorder mark retain Tally while idle.
 - **Accent:** the user's macOS system accent color for controls, selection and focus.
 - **Neutrals:**
 
@@ -109,9 +109,11 @@ Implementation: `src-tauri/src/overlay.rs` (notch detection from `NSScreen`, top
 
 ## Mark
 
-- **Keycap + LED:** a single key seen from above with a small caps-lock style LED in the corner. Push and talk in one object.
-- **App icon:** a graphite squircle, a graphite keycap, and the LED as the only color, in Tally with a soft glow.
-- **Menu bar:** a template-image keycap outline. The LED fills with Tally only while recording.
+- **Pocket recorder:** a compact cassette recorder and walkie-talkie hybrid with a channel display, short antenna, and record, stop, and play controls.
+- **Numeric wordmark:** custom `10.4` vector lettering with a permanently orange period. It is used for onboarding and larger identity moments.
+- **Name wordmark:** custom uppercase `TEN-FOUR` vector lettering from the approved secondary lockup. It is used in compact horizontal application chrome.
+- **App icon:** the warm squircle is the pocket recorder face itself, edge to edge: a full-width `10.4` display over three transport keys. No recorder drawn inside the tile.
+- **Menu bar:** a one-color recorder outline. Its record control fills with Tally only while recording.
 - Drawn by `scripts/gen_brand_assets.py`, which writes every tray icon and the 1024px master `src-tauri/icons/app-icon.png`.
   `bun run tauri icon src-tauri/icons/app-icon.png` regenerates the platform icon sets.
   In the UI: `HandyAppIcon`, `HandyMark` and `HandyLogo` in `src/components/icons/HandyMark.tsx`.
@@ -131,13 +133,15 @@ Implementation: `src-tauri/src/overlay.rs` (notch detection from `NSScreen`, top
 
 ## Decisions Log
 
-| Date       | Decision                                                | Rationale                                                                                          |
-| ---------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| 2026-09-27 | Tally Light direction                                   | User wants a quiet instrument that looks like Apple shipped it; the pink and hand read as toy-ish. |
-| 2026-09-27 | SF Pro + SF Mono, New York for history                  | First-party feel; custom fonts in a Mac settings window read as web.                               |
-| 2026-09-27 | One owned color (Tally red), system accent for controls | Handy disappears until it is live; no competitor follows the system accent.                        |
-| 2026-09-27 | Island overlay, Glow line variant                       | Picked from five variants (Split, Shelf, Glow line, Live text, Reels) as the most ambient.         |
-| 2026-09-27 | Keycap + LED mark                                       | Picked over Level H and Tally ring.                                                                |
-| 2026-09-27 | Microcassette cues                                      | Picked over Felt, Click, Tape deck and Walkman.                                                    |
-| 2026-09-28 | Settings window, icons and sounds moved to Tally Light  | Pink and the hand removed; System Settings layout, system accent, keycap mark, Microcassette cues. |
-| 2026-09-28 | Live words under the island; voice line on a spring     | User wanted to see words as they speak, and a line that follows their voice smoothly.              |
+| Date       | Decision                                                | Rationale                                                                                                                                                 |
+| ---------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-27 | Tally Light direction                                   | User wants a quiet instrument that looks like Apple shipped it; the pink and hand read as toy-ish.                                                        |
+| 2026-09-27 | SF Pro + SF Mono, New York for history                  | First-party feel; custom fonts in a Mac settings window read as web.                                                                                      |
+| 2026-09-27 | One owned color (Tally red), system accent for controls | Handy disappears until it is live; no competitor follows the system accent.                                                                               |
+| 2026-09-27 | Island overlay, Glow line variant                       | Picked from five variants (Split, Shelf, Glow line, Live text, Reels) as the most ambient.                                                                |
+| 2026-09-27 | Keycap + LED mark                                       | Picked over Level H and Tally ring.                                                                                                                       |
+| 2026-09-27 | Microcassette cues                                      | Picked over Felt, Click, Tape deck and Walkman.                                                                                                           |
+| 2026-09-28 | Settings window, icons and sounds moved to Tally Light  | Pink and the hand removed; System Settings layout, system accent, keycap mark, Microcassette cues.                                                        |
+| 2026-09-28 | Live words under the island; voice line on a spring     | User wanted to see words as they speak, and a line that follows their voice smoothly.                                                                     |
+| 2026-09-28 | Renamed the app from Handy to Ten-Four                  | "Handy" never read as dictation. Radio slang for "message received" fits speaking orders to agents. Code identifiers stay "handy".                        |
+| 2026-09-28 | Pocket recorder identity selected                       | Cassette Futurism connects the radio name to a clear handheld object. The recorder icon, `TEN-FOUR` lockup, and `10.4` wordmark were explicitly approved. |

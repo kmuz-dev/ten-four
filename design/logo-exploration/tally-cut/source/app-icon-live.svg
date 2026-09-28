@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img"
+     aria-label="Tally Cut live app icon">
+
+  <defs>
+    <linearGradient id="iconBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3C3C40"/>
+      <stop offset="1" stop-color="#1B1B1D"/>
+    </linearGradient>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#505056"/>
+      <stop offset="1" stop-color="#29292D"/>
+    </linearGradient>
+    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#77777D"/>
+      <stop offset="1" stop-color="#4A4A50"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#64646A"/>
+      <stop offset="1" stop-color="#303034"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="64" y="64" width="896" height="896" rx="214" fill="url(#iconBg)"/>
+  <rect x="70" y="70" width="884" height="884" rx="208" fill="none"
+        stroke="#FFFFFF" stroke-opacity=".10" stroke-width="8"/>
+
+  <path d="M310 206 H704 L818 320 V704 L704 818 H626 L558 748
+           L490 818 H310 L206 714 V310 Z" fill="url(#edge)"/>
+  <path d="M330 252 H684 L772 340 V684 L684 772 H646 L558 692
+           L470 772 H330 L252 694 V330 Z" fill="#414146"/>
+  <path d="M490 818 L558 748 L626 818 Z" fill="#1B1B1D"/>
+  <path d="M330 252 H684 L772 340" fill="none" stroke="#FFFFFF"
+        stroke-opacity=".12" stroke-width="8"/>
+  <circle cx="358" cy="358" r="33" fill="#171719"/><circle cx="358" cy="358" r="27" fill="none" stroke="#FF8A70" stroke-width="6"/><circle cx="358" cy="358" r="24" fill="#FF4A26"/>
+</svg>
