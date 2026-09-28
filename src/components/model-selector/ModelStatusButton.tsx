@@ -32,7 +32,7 @@ const ModelStatusButton: React.FC<ModelStatusButtonProps> = ({
       case "loading":
         return "bg-yellow-400 animate-pulse";
       case "downloading":
-        return "bg-logo-primary animate-pulse";
+        return "bg-accent animate-pulse";
       case "verifying":
         return "bg-orange-400 animate-pulse";
       case "extracting":
@@ -55,7 +55,7 @@ const ModelStatusButton: React.FC<ModelStatusButtonProps> = ({
       title={`Model status: ${displayText}`}
     >
       <div className={`w-2 h-2 rounded-full ${getStatusColor(status)}`} />
-      <span className="max-w-28 truncate">{displayText}</span>
+      <span className="max-w-[180px] truncate">{displayText}</span>
       <svg
         className={`w-3 h-3 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
         fill="none"

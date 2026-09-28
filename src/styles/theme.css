@@ -1,31 +1,40 @@
-/* Handy Colors */
+/* Handy colors: "Tally Light" (DESIGN.md) */
 
 :root {
   /* Palette source of truth. Each themed color is defined once as a
      light/dark pair; the active tokens below and the `data-theme` overrides
-     in App.css reference these, so a hex value lives in exactly one place. */
-  --light-color-text: #0f0f0f;
-  --light-color-background: #fbfbfb;
-  --light-color-logo-primary: #faa2ca;
-  --light-color-logo-stroke: #382731;
+     reference these, so a hex value lives in exactly one place. */
+  --light-color-text: #1d1d1f;
+  --light-color-text-secondary: #6e6e73;
+  --light-color-background: #f2f1ee;
+  --light-color-sidebar: #e9e8e4;
+  --light-color-surface: #ffffff;
+  --light-color-hairline: #e2e1dc;
+  --light-color-control: #ffffff;
+  --light-color-control-border: rgb(0 0 0 / 0.16);
 
-  --dark-color-text: #fbfbfb;
-  --dark-color-background: #2c2b29;
-  --dark-color-logo-primary: #f28cbb;
-  --dark-color-logo-stroke: #fad1ed;
+  --dark-color-text: #f2f2ef;
+  --dark-color-text-secondary: #9a9a9f;
+  --dark-color-background: #1c1c1e;
+  --dark-color-sidebar: #232325;
+  --dark-color-surface: #2a2a2d;
+  --dark-color-hairline: #38383b;
+  --dark-color-control: #3a3a3d;
+  --dark-color-control-border: rgb(255 255 255 / 0.1);
 
-  /* Semantic status colors. First used by SecureInputWarning; intended to
-     replace the ad-hoc yellow-500/red-500 usages (e.g. ui/Alert.tsx) over
-     time so status styling is themeable from one place. */
+  /* Controls, selection and focus follow the macOS accent color the user picked
+     in System Settings; other platforms (and older WebKit) get Apple blue. */
+  --light-color-accent-fallback: #007aff;
+  --dark-color-accent-fallback: #0a84ff;
+
+  /* Semantic status colors. Separate from the accent and from Tally. */
   --light-color-warning: #d97706;
   --light-color-error: #dc2626;
   --dark-color-warning: #fbbf24;
   --dark-color-error: #f87171;
 
   /* Tokens that do not change between light and dark */
-  --color-background-ui: #da5893;
-  --color-text-stroke: #f6f6f6;
-  --color-mid-gray: #808080;
+  --color-mid-gray: #8e8e93;
   /* Tally: the one color Handy owns — the "you are live" record light
      (DESIGN.md). This is its value on dark surfaces such as the island. */
   --color-tally-hud: #ff6242;
@@ -33,9 +42,14 @@
   /* Active palette — defaults to light, follows the OS via the media query
      below, or is forced by `data-theme` (see the overrides below). */
   --color-text: var(--light-color-text);
+  --color-text-secondary: var(--light-color-text-secondary);
   --color-background: var(--light-color-background);
-  --color-logo-primary: var(--light-color-logo-primary);
-  --color-logo-stroke: var(--light-color-logo-stroke);
+  --color-sidebar: var(--light-color-sidebar);
+  --color-surface: var(--light-color-surface);
+  --color-hairline: var(--light-color-hairline);
+  --color-control: var(--light-color-control);
+  --color-control-border: var(--light-color-control-border);
+  --color-accent: var(--light-color-accent-fallback);
   --color-warning: var(--light-color-warning);
   --color-error: var(--light-color-error);
 }
@@ -43,9 +57,14 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --color-text: var(--dark-color-text);
+    --color-text-secondary: var(--dark-color-text-secondary);
     --color-background: var(--dark-color-background);
-    --color-logo-primary: var(--dark-color-logo-primary);
-    --color-logo-stroke: var(--dark-color-logo-stroke);
+    --color-sidebar: var(--dark-color-sidebar);
+    --color-surface: var(--dark-color-surface);
+    --color-hairline: var(--dark-color-hairline);
+    --color-control: var(--dark-color-control);
+    --color-control-border: var(--dark-color-control-border);
+    --color-accent: var(--dark-color-accent-fallback);
     --color-warning: var(--dark-color-warning);
     --color-error: var(--dark-color-error);
   }
@@ -63,18 +82,38 @@
  */
 :root[data-theme="light"] {
   --color-text: var(--light-color-text);
+  --color-text-secondary: var(--light-color-text-secondary);
   --color-background: var(--light-color-background);
-  --color-logo-primary: var(--light-color-logo-primary);
-  --color-logo-stroke: var(--light-color-logo-stroke);
+  --color-sidebar: var(--light-color-sidebar);
+  --color-surface: var(--light-color-surface);
+  --color-hairline: var(--light-color-hairline);
+  --color-control: var(--light-color-control);
+  --color-control-border: var(--light-color-control-border);
+  --color-accent: var(--light-color-accent-fallback);
   --color-warning: var(--light-color-warning);
   --color-error: var(--light-color-error);
 }
 
 :root[data-theme="dark"] {
   --color-text: var(--dark-color-text);
+  --color-text-secondary: var(--dark-color-text-secondary);
   --color-background: var(--dark-color-background);
-  --color-logo-primary: var(--dark-color-logo-primary);
-  --color-logo-stroke: var(--dark-color-logo-stroke);
+  --color-sidebar: var(--dark-color-sidebar);
+  --color-surface: var(--dark-color-surface);
+  --color-hairline: var(--dark-color-hairline);
+  --color-control: var(--dark-color-control);
+  --color-control-border: var(--dark-color-control-border);
+  --color-accent: var(--dark-color-accent-fallback);
   --color-warning: var(--dark-color-warning);
   --color-error: var(--dark-color-error);
+}
+
+/* WebKit on macOS resolves this keyword to the user's System Settings accent
+   (and follows it live). Placed last so it wins over every fallback above. */
+@supports (color: -apple-system-control-accent) {
+  :root,
+  :root[data-theme="light"],
+  :root[data-theme="dark"] {
+    --color-accent: -apple-system-control-accent;
+  }
 }

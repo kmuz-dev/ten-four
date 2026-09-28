@@ -20,17 +20,16 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    "font-medium rounded-lg border focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
+    "font-normal rounded-md border focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-default";
 
   const variantClasses = {
     primary:
-      "text-white bg-background-ui border-background-ui hover:bg-background-ui/80 hover:border-background-ui/80 focus:ring-1 focus:ring-background-ui",
+      "text-white bg-accent border-transparent shadow-[0_1px_1.5px_rgb(0_0_0/0.15)] hover:brightness-110 active:brightness-95",
     "primary-soft":
-      "text-text bg-logo-primary/20 border-transparent hover:bg-logo-primary/30 focus:ring-1 focus:ring-logo-primary",
-    secondary:
-      "bg-mid-gray/10 border-mid-gray/20 hover:bg-background-ui/30 hover:border-logo-primary focus:outline-none",
+      "text-accent bg-accent/12 border-transparent hover:bg-accent/20",
+    secondary: "mac-control border-transparent text-text active:brightness-95",
     // Secondary's neutral resting look, but hover/focus use the semantic
-    // --color-warning token (theme.css) instead of the pink accent — for
+    // --color-warning token (theme.css) instead of the accent — for
     // buttons sitting on warning surfaces like SecureInputWarning
     warning:
       "text-text bg-mid-gray/10 border-mid-gray/20 hover:bg-warning/15 hover:border-warning focus:ring-1 focus:ring-warning",
@@ -39,13 +38,13 @@ export const Button: React.FC<ButtonProps> = ({
     "danger-ghost":
       "text-red-400 border-transparent hover:text-red-300 hover:bg-red-500/10 focus:bg-red-500/20",
     ghost:
-      "text-current border-transparent hover:bg-mid-gray/10 hover:border-logo-primary focus:bg-mid-gray/20",
+      "text-current border-transparent hover:bg-text/[0.07] active:bg-text/[0.12]",
   };
 
   const sizeClasses = {
-    sm: "px-2 py-1 text-xs",
-    md: "px-4 py-[5px] text-sm",
-    lg: "px-4 py-2 text-base",
+    sm: "px-2 h-[22px] text-xs",
+    md: "px-3 h-[24px] text-sm",
+    lg: "px-4 h-[30px] text-sm",
   };
 
   return (

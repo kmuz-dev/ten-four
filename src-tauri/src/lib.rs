@@ -957,6 +957,18 @@ pub fn run(cli_args: CliArgs) {
                 win_builder = win_builder.data_directory(data_dir.join("webview"));
             }
 
+            // macOS: a System Settings-style window. The title bar is transparent
+            // and the traffic lights sit inside the sidebar, which pads itself
+            // to clear them (`.titlebar-pad` in App.css) and provides the drag
+            // region.
+            #[cfg(target_os = "macos")]
+            {
+                win_builder = win_builder
+                    .title_bar_style(tauri::TitleBarStyle::Overlay)
+                    .hidden_title(true)
+                    .traffic_light_position(tauri::LogicalPosition::new(18.0, 22.0));
+            }
+
             // Only used on Windows, to disable WebView2 browser accelerators.
             #[cfg_attr(not(target_os = "windows"), allow(unused_variables))]
             let main_window = win_builder.build()?;

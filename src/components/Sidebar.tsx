@@ -7,10 +7,10 @@ import {
   Info,
   Sparkles,
   Cpu,
+  SlidersHorizontal,
   TextQuote,
 } from "lucide-react";
-import HandyTextLogo from "./icons/HandyTextLogo";
-import HandyHand from "./icons/HandyHand";
+import { HandyLogo } from "./icons/HandyMark";
 import { useSettings } from "../hooks/useSettings";
 import {
   GeneralSettings,
@@ -43,7 +43,7 @@ interface SectionConfig {
 export const SECTIONS_CONFIG = {
   general: {
     labelKey: "sidebar.general",
-    icon: HandyHand,
+    icon: SlidersHorizontal,
     component: GeneralSettings,
     enabled: () => true,
   },
@@ -107,35 +107,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
     .filter(([_, config]) => config.enabled(settings))
     .map(([id, config]) => ({ id: id as SidebarSection, ...config }));
 
+  // System Settings-style source list: graphite icon tiles, accent selection.
+  // The top padding clears the macOS traffic lights (overlay title bar).
   return (
-    <div className="flex flex-col w-40 h-full border-e border-mid-gray/20 items-center px-2">
-      <HandyTextLogo width={120} className="m-4" />
-      <div className="flex flex-col w-full items-center gap-1 pt-2 border-t border-mid-gray/20">
+    <nav className="titlebar-pad flex flex-col w-[188px] shrink-0 h-full bg-sidebar border-e border-hairline px-2.5">
+      <div data-tauri-drag-region className="px-1.5 pt-1 pb-4">
+        <HandyLogo iconSize={26} className="pointer-events-none" />
+      </div>
+      <div className="flex flex-col w-full gap-0.5">
         {availableSections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
 
           return (
-            <div
+            <button
+              type="button"
               key={section.id}
-              className={`flex gap-2 items-center p-2 w-full rounded-lg cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-logo-primary/80"
-                  : "hover:bg-mid-gray/20 hover:opacity-100 opacity-85"
+              aria-current={isActive ? "page" : undefined}
+              className={`flex gap-2 items-center h-7 px-1.5 w-full rounded-md text-start cursor-default transition-colors duration-100 ${
+                isActive ? "bg-accent text-white" : "hover:bg-text/[0.06]"
               }`}
               onClick={() => onSectionChange(section.id)}
             >
-              <Icon width={24} height={24} className="shrink-0" />
-              <p
-                className="text-sm font-medium truncate"
+              <span
+                className={`grid place-items-center size-5 shrink-0 rounded-[5px] ${
+                  isActive
+                    ? "bg-white/20"
+                    : "bg-gradient-to-b from-[#98989d] to-[#6e6e73]"
+                }`}
+              >
+                <Icon width={13} height={13} strokeWidth={2} color="white" />
+              </span>
+              <span
+                className="text-[13px] truncate"
                 title={t(section.labelKey)}
               >
                 {t(section.labelKey)}
-              </p>
-            </div>
+              </span>
+            </button>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 };

@@ -308,7 +308,7 @@ function App() {
           title: "font-medium",
           description: "text-mid-gray",
           actionButton:
-            "px-2 py-1 text-xs font-medium rounded-lg border bg-mid-gray/10 border-mid-gray/20 hover:bg-background-ui/30 hover:border-logo-primary cursor-pointer whitespace-nowrap",
+            "px-2 py-1 text-xs font-medium rounded-lg border bg-mid-gray/10 border-mid-gray/20 hover:bg-accent/30 hover:border-accent cursor-pointer whitespace-nowrap",
         },
       }}
     />
@@ -337,7 +337,7 @@ function App() {
         <button
           type="button"
           onClick={() => setOnboardingPreview(null)}
-          className="fixed top-4 end-4 z-50 rounded-lg border border-mid-gray/20 bg-background px-4 py-2 text-sm font-medium text-text shadow-lg hover:bg-background-ui/30 cursor-pointer"
+          className="fixed top-4 end-4 z-50 rounded-lg border border-mid-gray/20 bg-background px-4 py-2 text-sm font-medium text-text shadow-lg hover:bg-accent/30 cursor-pointer"
         >
           {t("settings.debug.onboardingPreview.exitButton")}
         </button>
@@ -364,19 +364,27 @@ function App() {
             activeSection={currentSection}
             onSectionChange={setCurrentSection}
           />
-          {/* Scrollable content area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Content column: on macOS a title-bar strip (drag region + section
+              title), then the scrolling page, then the footer. */}
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+            <div
+              data-tauri-drag-region
+              className="titlebar-strip flex items-center px-6"
+            >
+              <h1 className="pointer-events-none text-[15px] font-semibold text-text">
+                {t(SECTIONS_CONFIG[currentSection]?.labelKey ?? "")}
+              </h1>
+            </div>
             <div ref={settingsScrollRef} className="flex-1 overflow-y-auto">
-              <div className="flex flex-col items-center p-4 gap-4">
+              <div className="flex flex-col items-center px-6 pt-2 pb-6 gap-5">
                 <AccessibilityPermissions />
                 <SecureInputWarning />
                 {renderSettingsContent(currentSection, setOnboardingPreview)}
               </div>
             </div>
+            <Footer />
           </div>
         </div>
-        {/* Fixed footer at bottom */}
-        <Footer />
       </div>
     );
   }

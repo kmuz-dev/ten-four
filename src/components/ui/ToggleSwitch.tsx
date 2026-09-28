@@ -44,11 +44,12 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           disabled={disabled || isUpdating}
           onChange={(e) => onChange(e.target.checked)}
         />
-        <div className="relative w-11 h-6 bg-mid-gray/20 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-logo-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-background-ui peer-disabled:opacity-50"></div>
+        {/* macOS switch: 32x18 track, 16px knob that springs across. */}
+        <div className="relative w-[32px] h-[18px] rounded-full bg-text/15 shadow-[inset_0_0_0_0.5px_rgb(0_0_0/0.08)] transition-colors duration-200 peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent/50 peer-focus-visible:ring-offset-1 peer-disabled:opacity-50 after:content-[''] after:absolute after:top-px after:start-px after:size-4 after:rounded-full after:bg-white after:shadow-[0_0_0_0.5px_rgb(0_0_0/0.15),0_1px_2px_rgb(0_0_0/0.25)] after:transition-transform after:duration-200 after:ease-[cubic-bezier(.2,.9,.25,1.04)] peer-checked:after:translate-x-[14px] rtl:peer-checked:after:-translate-x-[14px]"></div>
       </label>
       {isUpdating && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-logo-primary border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
     </SettingContainer>

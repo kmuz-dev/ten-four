@@ -567,15 +567,15 @@ pub fn change_audio_feedback_volume_setting(app: AppHandle, volume: f32) -> Resu
 #[specta::specta]
 pub fn change_sound_theme_setting(app: AppHandle, theme: String) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
-    let parsed = match theme.as_str() {
-        "marimba" => SoundTheme::Marimba,
-        "pop" => SoundTheme::Pop,
-        "custom" => SoundTheme::Custom,
-        other => {
-            warn!("Invalid sound theme '{}', defaulting to marimba", other);
-            SoundTheme::Marimba
-        }
-    };
+    // Parse through serde so the enum's own (lowercase) names are the only list.
+    let parsed = serde_json::from_value::<SoundTheme>(serde_json::Value::String(theme.clone()))
+        .unwrap_or_else(|_| {
+            warn!(
+                "Invalid sound theme '{}', defaulting to microcassette",
+                theme
+            );
+            SoundTheme::Microcassette
+        });
     settings.sound_theme = parsed;
     settings::write_settings(&app, settings);
     Ok(())

@@ -28,8 +28,8 @@ const IconButton: React.FC<{
     disabled={disabled}
     className={`p-1.5 rounded-md flex items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed disabled:text-text/20 ${
       active
-        ? "text-logo-primary hover:text-logo-primary/80"
-        : "text-text/50 hover:text-logo-primary"
+        ? "text-accent hover:text-accent/80"
+        : "text-text/50 hover:text-accent"
     }`}
     title={title}
   >
@@ -245,7 +245,7 @@ export const HistorySettings: React.FC = () => {
     content = (
       <>
         <AudioPlayerGroup>
-          <div className="divide-y divide-mid-gray/20">
+          <div className="grouped-rows">
             {entries.map((entry) => (
               <HistoryEntryComponent
                 key={entry.id}
@@ -268,9 +268,9 @@ export const HistorySettings: React.FC = () => {
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
       <div className="space-y-2">
-        <div className="px-4 flex items-center justify-between">
+        <div className="px-1 flex items-center justify-between">
           <div>
-            <h2 className="text-xs font-medium text-mid-gray uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-text">
               {t("settings.history.title")}
             </h2>
           </div>
@@ -279,7 +279,7 @@ export const HistorySettings: React.FC = () => {
             label={t("settings.history.openFolder")}
           />
         </div>
-        <div className="bg-background border border-mid-gray/20 rounded-lg overflow-visible">
+        <div className="bg-surface border border-hairline rounded-[10px] overflow-visible">
           {content}
         </div>
       </div>
@@ -354,10 +354,14 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const formattedDate = formatDateTime(String(entry.timestamp), i18n.language);
 
   return (
-    <div className="px-4 py-2 pb-5 flex flex-col gap-3">
+    // History reads like a notebook (DESIGN.md): a quiet mono timestamp, the
+    // dictation set as prose in New York, actions revealed on hover.
+    <div className="group px-4 pt-3 pb-4 flex flex-col gap-2">
       <div className="flex justify-between items-center">
-        <p className="text-sm font-medium">{formattedDate}</p>
-        <div className="flex items-center">
+        <p className="font-mono text-xs tabular-nums text-text-secondary">
+          {formattedDate}
+        </p>
+        <div className="flex items-center opacity-40 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
           <IconButton
             onClick={handleCopyText}
             disabled={!hasTranscription || retrying}
@@ -411,7 +415,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       </div>
 
       <p
-        className={`italic text-sm pb-2 ${
+        className={`font-serif text-[15px] leading-[1.45] pb-1 ${
           retrying
             ? ""
             : hasTranscription

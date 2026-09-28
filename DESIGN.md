@@ -28,7 +28,7 @@ Every decision below serves that sentence.
 
 - **UI:** SF Pro, the system font (`-apple-system`). Any custom font inside a Mac settings window reads as a web app in a wrapper.
 - **Data:** SF Mono (`ui-monospace`) with `tabular-nums` for timers, shortcuts, model sizes and timestamps.
-- **Prose:** New York (`ui-serif`) for transcription history only, set like a notebook. Not yet built.
+- **Prose:** New York (`ui-serif`) for transcription history only, set like a notebook (`font-serif`).
 - **Scale:** title 15/700, label 13/400, caption 11/400, data 11 mono, prose 15 with 1.45 line height.
 
 ## Color
@@ -40,8 +40,10 @@ Every decision below serves that sentence.
 
 | Token          | Light     | Dark      |
 | -------------- | --------- | --------- |
-| Background     | `#F6F5F2` | `#1B1B1D` |
-| Surface        | `#FFFFFF` | `#262628` |
+| Background     | `#F2F1EE` | `#1C1C1E` |
+| Sidebar        | `#E9E8E4` | `#232325` |
+| Surface        | `#FFFFFF` | `#2A2A2D` |
+| Control face   | `#FFFFFF` | `#3A3A3D` |
 | Hairline       | `#E2E1DC` | `#38383B` |
 | Text           | `#1D1D1F` | `#F2F2EF` |
 | Secondary text | `#6E6E73` | `#9A9A9F` |
@@ -93,23 +95,29 @@ Implementation: `src-tauri/src/overlay.rs` (notch detection from `NSScreen`, top
 - **Stop:** slide sweeping 3.6 to 1.4 kHz over 45ms, detent tick at 3 kHz, 190 Hz body. About 65ms total.
 - **Level:** about 6 dB under macOS system alerts.
 - **No success sound.** The pasted text is the confirmation.
-- The exact synthesis lives in the prototype (`CUES['micro-start']` and `CUES['micro-stop']`). Not yet rendered to WAV or wired into the app.
+- Rendered deterministically by `scripts/gen_microcassette_sounds.py` (edit a number and re-run) to `src-tauri/resources/microcassette_{start,stop}.wav`. It is the default sound theme.
 
 ## Mark
 
 - **Keycap + LED:** a single key seen from above with a small caps-lock style LED in the corner. Push and talk in one object.
 - **App icon:** a graphite squircle, a graphite keycap, and the LED as the only color, in Tally with a soft glow.
 - **Menu bar:** a template-image keycap outline. The LED fills with Tally only while recording.
-- Not yet built. The SVG source is in the prototype.
+- Drawn by `scripts/gen_brand_assets.py`, which writes every tray icon and the 1024px master `src-tauri/icons/app-icon.png`.
+  `bun run tauri icon src-tauri/icons/app-icon.png` regenerates the platform icon sets.
+  In the UI: `HandyAppIcon`, `HandyMark` and `HandyLogo` in `src/components/icons/HandyMark.tsx`.
 
-## Not Yet Designed
+## Implementation Notes
 
-These parts of the app still carry the old look.
-They should be brought into line with this document in later passes:
+- Tokens live in `src/styles/theme.css` as light/dark pairs and are registered with Tailwind in `src/App.css`: `bg-background`, `bg-sidebar`, `bg-surface`, `border-hairline`, `text-text`, `text-text-secondary`, `bg-accent`, `bg-tally`.
+- `--color-accent` is `-apple-system-control-accent` in WebKit on macOS, so controls follow the System Settings accent. Elsewhere it falls back to Apple blue.
+- Tailwind's text scale is pinned to macOS points (`text-xs` 11, `text-sm` and `text-base` 13, `text-lg` 15) on a 13px root.
+- Shared control styles in `App.css`: `.grouped-rows` (inset hairlines), `.mac-control` (raised pop-up and secondary button face), `.mac-range` (slider).
+- The macOS window has a transparent title bar with the traffic lights inside the sidebar (`lib.rs`), padded by `.titlebar-pad` and `.titlebar-strip`.
 
-- The settings window and onboarding.
-- History (New York prose layout).
-- The app icon, tray icons and sound files.
+## Still in the Old Look
+
+- Onboarding screens beyond the new logo (model cards, permission steps).
+- The Minimal and Live overlay styles, which stay upstream's; the Island is the designed one.
 
 ## Decisions Log
 
@@ -121,3 +129,4 @@ They should be brought into line with this document in later passes:
 | 2026-09-27 | Island overlay, Glow line variant                       | Picked from five variants (Split, Shelf, Glow line, Live text, Reels) as the most ambient.         |
 | 2026-09-27 | Keycap + LED mark                                       | Picked over Level H and Tally ring.                                                                |
 | 2026-09-27 | Microcassette cues                                      | Picked over Felt, Click, Tape deck and Walkman.                                                    |
+| 2026-09-28 | Settings window, icons and sounds moved to Tally Light  | Pink and the hand removed; System Settings layout, system accent, keycap mark, Microcassette cues. |
