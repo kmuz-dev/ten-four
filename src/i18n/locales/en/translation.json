@@ -501,7 +501,7 @@
       "updateChecks": {
         "label": "Check for Updates",
         "description": "Automatically check for new versions of Ten-Four",
-        "lockedDescription": "Disabled by system configuration (HANDY_DISABLE_UPDATER)"
+        "lockedDescription": "Ten-Four doesn't update itself. Download new versions from GitHub."
       },
       "whatsNewPreview": {
         "title": "Preview What's New",
@@ -631,8 +631,8 @@
         "button": "View on GitHub"
       },
       "supportDevelopment": {
-        "title": "Support Development",
-        "description": "Help us continue building Handy",
+        "title": "Built on Handy",
+        "description": "Ten-Four is a fork of Handy by CJ Pais. Support the original project",
         "button": "Donate"
       },
       "acknowledgments": {
