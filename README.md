@@ -42,6 +42,26 @@ Ten-Four currently runs on Apple Silicon Macs.
 Ten-Four does not update itself.
 Check [Releases](../../releases) for new versions.
 
+## Windows, Linux and Intel Macs
+
+There is no ready-made Ten-Four download for these yet. You have two options.
+
+**The easy option: use Handy.**
+[Handy](https://handy.computer) is the app Ten-Four is built on, and it has ready-made downloads for Windows, Linux and Intel Macs.
+You get the same local dictation, without Ten-Four's extra writing tools and island.
+
+**The hands-on option: build Ten-Four yourself.**
+The code is cross-platform, but I have only tested it on a Mac, so expect rough edges.
+Follow [BUILD.md](BUILD.md) for your system (Windows and Linux need a few extra tools, listed there), then run `bun run tauri build`.
+On Windows and Linux, a few things work differently:
+
+- **App Styles** can't tell which app you're typing into yet, so Smart Format always uses its default style.
+- **The recording island** appears as a floating bar, since there's no notch.
+- Windows will warn that the app is unrecognised the first time. Choose **More info**, then **Run anyway**.
+
+If you try it, please [open an issue](../../issues) saying what worked and what didn't.
+That's how a proper Windows and Linux release will happen.
+
 ## Build from source
 
 Ten-Four builds the same way as Handy: see [BUILD.md](BUILD.md).
