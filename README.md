@@ -1,14 +1,10 @@
-<p align="center">
-  <img src="src-tauri/icons/128x128@2x.png" width="128" alt="Ten-Four app icon" />
-</p>
+# Ten-Four
 
-<h1 align="center">Ten-Four</h1>
+**Talk to your computer. Have it understand you.**
 
-<p align="center"><strong>Talk to your computer. Your words land wherever your cursor is.</strong></p>
+Ten-Four is a free speech-to-text app.
 
-Ten-Four is a free speech-to-text app for Mac.
-Hold a shortcut, speak, let go, and the text is typed into whatever app you're using: your AI agent, your email, your notes.
-The name is radio slang for "message received".
+Hold a shortcut, speak, let go, and the text is typed into whatever app you're using: your AI agent, your email, your notes. The name is radio slang for "message received".
 
 Ten-Four is a fork of [Handy](https://github.com/cjpais/Handy) by [CJ Pais](https://github.com/cjpais).
 Handy does the hard part: local speech recognition, recording, shortcuts and the desktop app itself.
@@ -59,7 +55,8 @@ Handy's [README](https://github.com/cjpais/Handy#readme) covers models, CLI flag
 
 ## Reporting problems
 
-Please report Ten-Four issues here, not on the Handy repository.
+Please report Ten-Four issues here.
+
 Handy's maintainers don't support this fork.
 
 ## Credits
