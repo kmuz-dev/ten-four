@@ -768,6 +768,7 @@ impl ShortcutAction for TranscribeAction {
         // The paste lands in whatever is frontmost now, so read it before
         // transcription starts (the overlay never takes focus).
         let target_app = crate::app_context::frontmost_app();
+        debug!("Dictation target app: {:?}", target_app);
 
         tauri::async_runtime::spawn(async move {
             let _guard = FinishGuard(ah.clone(), Arc::clone(&tm));

@@ -139,6 +139,11 @@ struct InputEvent {
     /// They fire on every edge by design and must never be debounced —
     /// dropping one desyncs toggle parity and wedges recording on.
     external: bool,
+    /// When the key actually moved. The coordinator thread runs `start()`
+    /// synchronously (opening the mic, loading the model: up to ~1.3s), so a
+    /// release queued behind it would otherwise be timed on arrival and a
+    /// quick tap misread as a hold that stops recording at once.
+    occurred_at: Instant,
 }
 
 impl InputEvent {
@@ -245,6 +250,13 @@ impl CoordinatorState {
     fn is_locked(&self) -> bool {
         self.hold.as_ref().is_some_and(|h| h.locked)
             || self.pending_press.as_ref().is_some_and(|p| p.locked)
+    }
+
+    /// Handle a key edge at the time it actually happened (see
+    /// [`InputEvent::occurred_at`]), not when this thread got to it.
+    fn on_event(&mut self, input: InputEvent) -> Option<Effect> {
+        let occurred_at = input.occurred_at;
+        self.on_input(input, occurred_at)
     }
 
     fn on_input(&mut self, input: InputEvent, now: Instant) -> Option<Effect> {
@@ -567,7 +579,7 @@ impl TranscriptionCoordinator {
 
                     match cmd {
                         Command::Input(input) => {
-                            if let Some(effect) = state.on_input(input, Instant::now()) {
+                            if let Some(effect) = state.on_event(input) {
                                 run_effect(&app, &mut state, effect);
                             }
                         }
@@ -642,6 +654,7 @@ impl TranscriptionCoordinator {
                 mode,
                 hold_threshold,
                 external,
+                occurred_at: Instant::now(),
             }))
             .is_err()
         {
@@ -896,6 +909,7 @@ mod tests {
             mode: ShortcutActivation::PushToTalk,
             hold_threshold: Duration::ZERO,
             external: false,
+            occurred_at: Instant::now(),
         }
     }
 
@@ -1034,6 +1048,7 @@ mod tests {
                     mode: ShortcutActivation::Toggle,
                     hold_threshold: Duration::ZERO,
                     external: true,
+                    occurred_at: Instant::now(),
                 },
                 at,
             )
@@ -1096,6 +1111,7 @@ mod tests {
             mode: ShortcutActivation::Toggle,
             hold_threshold: Duration::ZERO,
             external,
+            occurred_at: Instant::now(),
         }
     }
 
@@ -1221,6 +1237,7 @@ mod tests {
             mode,
             hold_threshold: HOLD_THRESHOLD,
             external: false,
+            occurred_at: Instant::now(),
         }
     }
 
@@ -1278,6 +1295,34 @@ mod tests {
         assert!(state.on_input(input(mode, false), t0 + ms(5080)).is_none());
         assert!(state.on_processing_finished().is_none());
         assert_eq!(state.stage, Stage::Idle);
+    }
+
+    /// Regression: tapping the hotkey while the mic takes ~1s to open. The
+    /// release sits in the channel until `start()` returns, but it happened
+    /// 120ms after the press, so it is a tap that locks recording on — not a
+    /// 1s "hold" that stops it with no audio.
+    #[test]
+    fn hold_or_toggle_tap_during_slow_start_is_timed_by_the_key_not_the_queue() {
+        let mode = ShortcutActivation::HoldOrToggle;
+        let mut state = CoordinatorState::new();
+        let t0 = Instant::now();
+        let at = |is_pressed: bool, when: Instant| InputEvent {
+            occurred_at: when,
+            ..input(mode, is_pressed)
+        };
+
+        assert!(matches!(
+            state.on_event(at(true, t0)),
+            Some(Effect::Start { .. })
+        ));
+        // Processed long after the slow start, but stamped when the key rose.
+        assert!(state.on_event(at(false, t0 + ms(120))).is_none());
+        assert!(
+            state.on_grace_expired().is_none(),
+            "a 120ms tap must lock recording on, however late it is processed"
+        );
+        assert!(state.is_locked());
+        assert_eq!(state.stage, Stage::Recording(BINDING.to_string()));
     }
 
     /// Hold-or-toggle: a locked session ignores stray releases — only a press
