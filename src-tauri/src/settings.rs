@@ -499,10 +499,12 @@ pub struct AppSettings {
     pub paste_delay_ms: u64,
     #[serde(default = "default_paste_delay_after_ms")]
     pub paste_delay_after_ms: u64,
-    /// Debug-gated ("beta") receipt-sequenced paste: restore the clipboard only
-    /// after the target app actually reads the transcript, instead of after a
-    /// fixed delay. See `paste_tx`. macOS and Windows only.
-    #[serde(default)]
+    /// Receipt-sequenced paste: restore the clipboard only after the target app
+    /// actually reads the transcript, instead of after a fixed delay. See
+    /// `paste_tx`. macOS and Windows only. On by default on macOS in this fork:
+    /// busy Electron targets (Cursor measured reading 529ms after the chord)
+    /// read after the legacy ~160ms restore and paste the old clipboard.
+    #[serde(default = "default_reliable_paste")]
     pub reliable_paste: bool,
     #[serde(default = "default_typing_tool")]
     pub typing_tool: TypingTool,
@@ -641,6 +643,10 @@ fn default_recording_retention_period() -> RecordingRetentionPeriod {
 
 fn default_audio_feedback_volume() -> f32 {
     1.0
+}
+
+fn default_reliable_paste() -> bool {
+    cfg!(target_os = "macos")
 }
 
 fn default_sound_theme() -> SoundTheme {
@@ -1018,7 +1024,7 @@ pub fn get_default_settings() -> AppSettings {
         show_tray_icon: default_show_tray_icon(),
         paste_delay_ms: default_paste_delay_ms(),
         paste_delay_after_ms: default_paste_delay_after_ms(),
-        reliable_paste: false,
+        reliable_paste: default_reliable_paste(),
         typing_tool: default_typing_tool(),
         external_script_path: None,
         filler_word_removal_enabled: default_filler_word_removal_enabled(),
@@ -1609,6 +1615,23 @@ mod tests {
             serde_json::from_value(raw.get("overlay_position").unwrap().clone())
                 .expect("legacy \"none\" should deserialize, not error");
         assert_eq!(position, OverlayPosition::Bottom);
+    }
+
+    #[test]
+    fn reliable_paste_defaults_on_for_macos() {
+        // Fresh installs and stores that predate the key both get it: the
+        // timer-based restore pastes stale clipboard into slow (Electron) apps.
+        assert_eq!(
+            get_default_settings().reliable_paste,
+            cfg!(target_os = "macos")
+        );
+        let stored: AppSettings = serde_json::from_value({
+            let mut v = serde_json::to_value(get_default_settings()).unwrap();
+            v.as_object_mut().unwrap().remove("reliable_paste");
+            v
+        })
+        .unwrap();
+        assert_eq!(stored.reliable_paste, cfg!(target_os = "macos"));
     }
 
     #[test]
