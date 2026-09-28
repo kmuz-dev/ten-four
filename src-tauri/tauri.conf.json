@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Handy Personal",
+  "productName": "Ten-Four",
   "version": "0.9.7",
   "identifier": "com.kuda.handy",
   "build": {
