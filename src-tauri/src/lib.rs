@@ -1,4 +1,5 @@
 mod actions;
+mod app_context;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod apple_intelligence;
 mod audio_feedback;
@@ -695,6 +696,9 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_post_process_on_main_hotkey_setting,
             shortcut::change_spoken_commands_enabled_setting,
             shortcut::update_snippets,
+            app_context::list_seen_apps,
+            app_context::set_app_category,
+            app_context::change_app_styles_enabled_setting,
             shortcut::change_lazy_stream_close_setting,
             shortcut::change_vad_enabled_setting,
             shortcut::change_vad_backend_setting,

@@ -1,3 +1,4 @@
+use crate::app_context::{apply_category_rules, category_for, style_note, AppContext};
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
 use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
@@ -139,7 +140,13 @@ fn should_use_streaming_overlay(style: OverlayStyle, is_streaming: bool) -> bool
     style == OverlayStyle::Live && is_streaming
 }
 
-async fn post_process_transcription(settings: &AppSettings, transcription: &str) -> Option<String> {
+/// `style_note` (from App Styles) is appended to the selected prompt, so it
+/// reaches the model in both the structured and the legacy request.
+async fn post_process_transcription(
+    settings: &AppSettings,
+    transcription: &str,
+    style_note: Option<&str>,
+) -> Option<String> {
     if is_blank_transcription(transcription) {
         debug!("Post-processing skipped because the transcription is empty");
         return None;
@@ -194,6 +201,10 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         debug!("Post-processing skipped because the selected prompt is empty");
         return None;
     }
+    let prompt = match style_note {
+        Some(note) => format!("{}\n\n{}", prompt.trim_end(), note),
+        None => prompt,
+    };
 
     debug!(
         "Starting LLM post-processing with provider '{}' (model: {})",
@@ -440,11 +451,17 @@ fn resolve_effective_language(app: &AppHandle, settings: &AppSettings) -> String
     }
 }
 
+/// `target` is the app the text will be pasted into, when known (a history
+/// retry has none).
 pub(crate) async fn process_transcription_output(
     app: &AppHandle,
     transcription: &str,
     post_process: bool,
+    target: Option<&AppContext>,
 ) -> ProcessedTranscription {
+    if let Some(target) = target {
+        crate::app_context::remember_seen_app(app, target);
+    }
     let settings = get_settings(app);
 
     // Resolve the language the transcription actually ran in (the persisted
@@ -455,13 +472,16 @@ pub(crate) async fn process_transcription_output(
         .await
         .unwrap_or_else(|| transcription.to_string());
 
-    format_transcription(&settings, transcription, &converted, post_process).await
+    format_transcription(&settings, transcription, &converted, post_process, target).await
 }
 
 /// Turn a transcript into the text to paste: deterministic rules (spoken
 /// commands, snippets), then the LLM when `post_process` is set. Snippets are
 /// hidden behind placeholders while the LLM runs; if the LLM fails or loses a
 /// placeholder, the rules-only text is used instead (fail open).
+///
+/// With App Styles on, the target app's category adds a style line to the
+/// prompt and its deterministic rules run on the final text either way.
 ///
 /// `original` is the raw transcript as recorded in history; `text` is it after
 /// any script conversion. Needs no `AppHandle`, so the eval harness runs it.
@@ -470,21 +490,34 @@ async fn format_transcription(
     original: &str,
     text: &str,
     post_process: bool,
+    target: Option<&AppContext>,
 ) -> ProcessedTranscription {
+    let category = target.filter(|_| settings.app_styles_enabled).map(|app| {
+        (
+            app,
+            category_for(&app.bundle_id, &settings.app_category_overrides),
+        )
+    });
+    let style_note = category.and_then(|(app, category)| style_note(app, category));
+    let finish = |text: String| match category {
+        Some((_, category)) => apply_category_rules(&text, category),
+        None => text,
+    };
+
     let with_commands = if settings.spoken_commands_enabled {
         crate::text_rules::apply_spoken_commands(text)
     } else {
         text.to_string()
     };
     let protected = crate::text_rules::protect_snippets(&with_commands, &settings.snippets);
-    let rules_text = protected.expanded().to_string();
+    let rules_text = finish(protected.expanded().to_string());
 
     if post_process {
         // One budget for the whole LLM step: a timed-out structured request
         // is otherwise retried in legacy mode, doubling the wait.
         let llm = tokio::time::timeout(
             POST_PROCESS_BUDGET,
-            post_process_transcription(settings, &protected.text),
+            post_process_transcription(settings, &protected.text, style_note.as_deref()),
         )
         .await
         .unwrap_or_else(|_| {
@@ -495,7 +528,7 @@ async fn format_transcription(
             None
         });
         if let Some(llm_text) = llm {
-            match protected.restore(&llm_text) {
+            match protected.restore(&llm_text).map(finish) {
                 Some(final_text) => {
                     let prompt = settings
                         .post_process_selected_prompt_id
@@ -732,6 +765,9 @@ impl ShortcutAction for TranscribeAction {
             settings.post_process_enabled && settings.post_process_on_main_hotkey
         };
         let cancel_generation = rm.cancel_generation();
+        // The paste lands in whatever is frontmost now, so read it before
+        // transcription starts (the overlay never takes focus).
+        let target_app = crate::app_context::frontmost_app();
 
         tauri::async_runtime::spawn(async move {
             let _guard = FinishGuard(ah.clone(), Arc::clone(&tm));
@@ -837,7 +873,12 @@ impl ShortcutAction for TranscribeAction {
                                 }
                             }
                             let Some(processed) = complete_unless_cancelled(
-                                process_transcription_output(&ah, &transcription, post_process),
+                                process_transcription_output(
+                                    &ah,
+                                    &transcription,
+                                    post_process,
+                                    target_app.as_ref(),
+                                ),
                                 || rm.was_cancelled_since(cancel_generation),
                             )
                             .await
@@ -1021,6 +1062,7 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
 #[cfg(test)]
 mod smart_format_eval {
     use super::format_transcription;
+    use crate::app_context::AppContext;
     use crate::settings::{get_default_settings, Snippet};
     use std::time::Instant;
 
@@ -1035,6 +1077,9 @@ mod smart_format_eval {
         absent: Vec<String>,
         #[serde(default)]
         snippets: Vec<Snippet>,
+        /// The app the text is dictated into (App Styles).
+        app: Option<AppContext>,
+        not_ending_with: Option<String>,
     }
 
     fn normalize(s: &str) -> String {
@@ -1060,6 +1105,11 @@ mod smart_format_eval {
         for needle in &case.absent {
             if got.contains(needle.as_str()) {
                 out.push(format!("should not contain {:?}", needle));
+            }
+        }
+        if let Some(suffix) = &case.not_ending_with {
+            if got.trim_end().ends_with(suffix.as_str()) {
+                out.push(format!("should not end with {:?}", suffix));
             }
         }
         out
@@ -1115,7 +1165,9 @@ mod smart_format_eval {
                 true,
             );
             let started = Instant::now();
-            let result = format_transcription(&settings, &transcript, &transcript, true).await;
+            let result =
+                format_transcription(&settings, &transcript, &transcript, true, case.app.as_ref())
+                    .await;
             let ms = started.elapsed().as_millis();
             timings.push(ms);
             let used_llm = result.post_process_prompt.is_some();

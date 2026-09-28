@@ -17,7 +17,8 @@
     "debug": "تصحيح الأخطاء",
     "about": "حول",
     "models": "النماذج",
-    "snippets": "Snippets"
+    "snippets": "Snippets",
+    "appStyles": "App Styles"
   },
   "onboarding": {
     "subtitle": "للبدء، اختر نموذج التفريغ الصوتي",
@@ -659,6 +660,56 @@
       "spokenCommands": {
         "title": "Spoken line breaks",
         "description": "Say \"new line\" or \"new paragraph\" to insert a line break."
+      }
+    },
+    "appStyles": {
+      "title": "App Styles",
+      "description": "Ten-Four notices which app you're dictating into and adjusts Smart Format's style to fit. Works when post-processing is on.",
+      "toggle": {
+        "title": "Match style to the app",
+        "description": "Adapt tone and punctuation to the app the text is pasted into."
+      },
+      "yourApps": {
+        "title": "Your apps",
+        "description": "Apps you've dictated into. Change a category to change its style.",
+        "empty": "Dictate into an app and it will appear here.",
+        "builtIn": "Default category",
+        "custom": "Your choice"
+      },
+      "stylesTitle": "Styles",
+      "categories": {
+        "code": {
+          "label": "Code editors",
+          "description": "Cursor, VS Code, Xcode, Zed, JetBrains. Keeps file names and code terms exactly, plain sentences, no greetings."
+        },
+        "terminal": {
+          "label": "Terminals",
+          "description": "Terminal, iTerm, Warp, Ghostty. Treated as prompts for command-line agents such as Claude Code."
+        },
+        "ai_chat": {
+          "label": "AI assistants",
+          "description": "Claude, ChatGPT, Perplexity. Clear, direct prompts in your own words."
+        },
+        "email": {
+          "label": "Email",
+          "description": "Mail, Outlook, Spark, Superhuman. Complete sentences, professional tone, greeting and sign-off on their own lines."
+        },
+        "work_chat": {
+          "label": "Work chat",
+          "description": "Slack, Teams. Short and conversational, no trailing period on quick messages."
+        },
+        "personal_chat": {
+          "label": "Personal chat",
+          "description": "Messages, WhatsApp, Telegram, Signal, Discord. Casual, your own wording, no trailing period on quick messages."
+        },
+        "notes": {
+          "label": "Notes and documents",
+          "description": "Notes, Notion, Obsidian, Word, Pages. Clear sentences, lists when you list things."
+        },
+        "other": {
+          "label": "Other",
+          "description": "Browsers and everything else. Smart Format's default style."
+        }
       }
     }
   },

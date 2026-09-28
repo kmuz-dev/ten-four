@@ -8,6 +8,7 @@ export { AboutSettings } from "./about/AboutSettings";
 export { PostProcessingSettings } from "./post-processing/PostProcessingSettings";
 export { ModelsSettings } from "./models/ModelsSettings";
 export { SnippetsSettings } from "./snippets/SnippetsSettings";
+export { AppStylesSettings } from "./app-styles/AppStylesSettings";
 
 // Individual setting components
 export { MicrophoneSelector } from "./MicrophoneSelector";

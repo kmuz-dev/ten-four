@@ -375,6 +375,28 @@ async updateSnippets(snippets: Snippet[]) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async listSeenApps() : Promise<SeenApp[]> {
+    return await TAURI_INVOKE("list_seen_apps");
+},
+/**
+ * Set an app's category. Choosing its built-in category clears the override.
+ */
+async setAppCategory(bundleId: string, category: AppCategory) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_app_category", { bundleId, category }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeAppStylesEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_app_styles_enabled_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async changeLazyStreamCloseSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_lazy_stream_close_setting", { enabled }) };
@@ -966,6 +988,11 @@ streamTextEvent: "stream-text-event"
 
 /** user-defined types **/
 
+export type AppCategory = "code" | "terminal" | "ai_chat" | "email" | "work_chat" | "personal_chat" | "notes" | "other"
+/**
+ * The app that has focus: its bundle id (stable key) and display name.
+ */
+export type AppContext = { bundle_id: string; name: string }
 /**
  * The container-level `serde(default)` (backed by the `Default` impl below)
  * guarantees every field — including ones added in the future — falls back to
@@ -1020,7 +1047,19 @@ spoken_commands_enabled?: boolean; snippets?: Snippet[];
  * Whether the Smart Format prompt has been added to this install's
  * prompts (done once; see `ensure_post_process_defaults`).
  */
-smart_format_seeded?: boolean; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; paste_delay_after_ms?: number; 
+smart_format_seeded?: boolean; 
+/**
+ * Adapt Smart Format's style to the app being dictated into.
+ */
+app_styles_enabled?: boolean; 
+/**
+ * The user's re-categorisations, keyed by bundle id.
+ */
+app_category_overrides?: Partial<{ [key in string]: AppCategory }>; 
+/**
+ * Apps dictated into, most recent first, so settings can list them.
+ */
+seen_apps?: AppContext[]; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; theme?: Theme; experimental_enabled?: boolean; lazy_stream_close?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; paste_delay_after_ms?: number; 
 /**
  * Receipt-sequenced paste: restore the clipboard only after the target app
  * actually reads the transcript, instead of after a fixed delay. See
@@ -1153,6 +1192,14 @@ uncovered_bindings: string[];
  * warning banner appears and explains why recording refused.
  */
 recorder_blocked: boolean }
+/**
+ * A recently used app as the App Styles page shows it.
+ */
+export type SeenApp = { bundle_id: string; name: string; category: AppCategory; 
+/**
+ * Whether `category` is the user's choice rather than the built-in one.
+ */
+is_custom: boolean }
 /**
  * How the transcribe shortcut's key events drive a recording.
  */

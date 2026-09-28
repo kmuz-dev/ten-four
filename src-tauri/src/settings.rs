@@ -483,6 +483,15 @@ pub struct AppSettings {
     /// prompts (done once; see `ensure_post_process_defaults`).
     #[serde(default)]
     pub smart_format_seeded: bool,
+    /// Adapt Smart Format's style to the app being dictated into.
+    #[serde(default = "default_app_styles_enabled")]
+    pub app_styles_enabled: bool,
+    /// The user's re-categorisations, keyed by bundle id.
+    #[serde(default)]
+    pub app_category_overrides: HashMap<String, crate::app_context::AppCategory>,
+    /// Apps dictated into, most recent first, so settings can list them.
+    #[serde(default)]
+    pub seen_apps: Vec<crate::app_context::AppContext>,
     #[serde(default)]
     pub mute_while_recording: bool,
     #[serde(default)]
@@ -659,6 +668,10 @@ fn default_sound_theme() -> SoundTheme {
 
 fn default_theme() -> Theme {
     Theme::System
+}
+
+fn default_app_styles_enabled() -> bool {
+    true
 }
 
 fn default_spoken_commands_enabled() -> bool {
@@ -1018,6 +1031,9 @@ pub fn get_default_settings() -> AppSettings {
         spoken_commands_enabled: default_spoken_commands_enabled(),
         snippets: Vec::new(),
         smart_format_seeded: true,
+        app_styles_enabled: default_app_styles_enabled(),
+        app_category_overrides: HashMap::new(),
+        seen_apps: Vec::new(),
         mute_while_recording: false,
         append_trailing_space: false,
         app_language: default_app_language(),

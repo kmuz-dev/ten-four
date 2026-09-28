@@ -141,5 +141,53 @@
     "input": "But this is just future work. UI work is future. But yeah, yeah, yeah. Definitely put it up on GitHub as well",
     "contains": ["GitHub"],
     "absent": ["yeah, yeah, yeah"]
+  },
+  {
+    "name": "app: Slack quick reply has no trailing period",
+    "app": {
+      "bundle_id": "com.tinyspeck.slackmacgap",
+      "name": "Slack"
+    },
+    "input": "sounds good see you at three",
+    "contains": ["ee you at 3"],
+    "not_ending_with": "."
+  },
+  {
+    "name": "app: WhatsApp stays casual",
+    "app": {
+      "bundle_id": "net.whatsapp.WhatsApp",
+      "name": "WhatsApp"
+    },
+    "input": "haha yeah that works for me",
+    "contains": ["that works for me"],
+    "not_ending_with": "."
+  },
+  {
+    "name": "app: Mail puts greeting and sign-off on their own lines",
+    "app": {
+      "bundle_id": "com.apple.mail",
+      "name": "Mail"
+    },
+    "input": "hi sarah thanks for the update i'll review it tomorrow best kuda",
+    "contains": ["Hi Sarah,\n", "review it tomorrow", "Best,\nKuda"]
+  },
+  {
+    "name": "app: Cursor keeps identifiers",
+    "app": {
+      "bundle_id": "com.todesktop.230313mzl4w4u92",
+      "name": "Cursor"
+    },
+    "input": "um rename getUserId to fetchUserId in auth dot ts and uh update the tests",
+    "contains": ["getUserId", "fetchUserId", "auth.ts"],
+    "absent": ["Um", " uh", "Hi", "Best"]
+  },
+  {
+    "name": "app: Terminal prompt for Claude Code",
+    "app": {
+      "bundle_id": "com.apple.Terminal",
+      "name": "Terminal"
+    },
+    "input": "run the tests with cargo test dash dash lib and fix whatever fails",
+    "contains": ["cargo test --lib"]
   }
 ]

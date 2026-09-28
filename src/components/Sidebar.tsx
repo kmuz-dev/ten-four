@@ -9,6 +9,7 @@ import {
   Cpu,
   SlidersHorizontal,
   TextQuote,
+  AppWindow,
 } from "lucide-react";
 import { HandyLogo } from "./icons/HandyMark";
 import { useSettings } from "../hooks/useSettings";
@@ -21,6 +22,7 @@ import {
   PostProcessingSettings,
   ModelsSettings,
   SnippetsSettings,
+  AppStylesSettings,
 } from "./settings";
 
 export type SidebarSection = keyof typeof SECTIONS_CONFIG;
@@ -69,6 +71,12 @@ export const SECTIONS_CONFIG = {
     labelKey: "sidebar.snippets",
     icon: TextQuote,
     component: SnippetsSettings,
+    enabled: () => true,
+  },
+  appstyles: {
+    labelKey: "sidebar.appStyles",
+    icon: AppWindow,
+    component: AppStylesSettings,
     enabled: () => true,
   },
   postprocessing: {
