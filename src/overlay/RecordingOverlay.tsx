@@ -11,6 +11,7 @@ import type {
 } from "@/bindings";
 import i18n, { syncLanguageFromSettings } from "@/i18n";
 import { getLanguageDirection } from "@/lib/utils/rtl";
+import { runVoiceGlow, VoiceFollower } from "./voiceGlow";
 
 type OverlayState = "recording" | "streaming" | "transcribing" | "processing";
 
@@ -25,6 +26,14 @@ interface IslandGeometry {
 // How long the island holds its check after a paste before retracting. The
 // backend keeps the window mapped for this plus the retract (overlay.rs).
 const ISLAND_DONE_HOLD_MS = 650;
+
+// Live words under the island: line height (px, matches `.island-words`) and
+// how many of the newest lines stay visible.
+const ISLAND_WORD_LINE = 19;
+const ISLAND_WORD_LINES = 2;
+
+const prefersReducedMotion = () =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Number of reactive bars in the waveform (the simple, smoothed style shared by
 // every overlay form). Mic levels arrive as 16 FFT buckets; we take the first N.
@@ -63,6 +72,13 @@ const RecordingOverlay: React.FC = () => {
   const [islandDone, setIslandDone] = useState(false);
   const islandRef = useRef<IslandGeometry | null>(null);
   const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The island's voice line runs off its own frame loop (voiceGlow.ts), fed
+  // straight from mic-level events without a React render per event.
+  const followerRef = useRef(new VoiceFollower());
+  const stageRef = useRef<HTMLDivElement>(null);
+  const wordsRef = useRef<HTMLParagraphElement>(null);
+  const wordsHeightRef = useRef(0);
+  const [wordLines, setWordLines] = useState(0);
 
   const smoothedLevelsRef = useRef<number[]>(Array(16).fill(0));
   // Live-text scroll-back: the text region "sticks" to the newest line while the
@@ -94,6 +110,7 @@ const RecordingOverlay: React.FC = () => {
         if (overlayState === "recording" || overlayState === "streaming") {
           setCaptureReady(false);
           smoothedLevelsRef.current = Array(16).fill(0);
+          followerRef.current = new VoiceFollower();
           setLevels(Array(WAVE_BARS).fill(0));
           setStreamText({ committed: "", tentative: "" });
         }
@@ -146,6 +163,10 @@ const RecordingOverlay: React.FC = () => {
 
       const unlistenLevel = await listen<number[]>("mic-level", (event) => {
         const newLevels = event.payload as number[];
+        if (islandRef.current) {
+          followerRef.current.feed(newLevels);
+          return;
+        }
         // Exponential smoothing across the 16 buckets, then take the first N
         // bars for the shared waveform.
         const smoothed = smoothedLevelsRef.current.map((prev, i) => {
@@ -221,6 +242,44 @@ const RecordingOverlay: React.FC = () => {
     setOverflowing(false);
   }, [session]);
 
+  // The island's voice line runs only while it is listening to a live mic.
+  const islandListening =
+    !!island &&
+    isVisible &&
+    grown &&
+    !islandDone &&
+    state === "recording" &&
+    captureReady;
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!islandListening || !stage) return;
+    return runVoiceGlow(stage, followerRef.current, prefersReducedMotion());
+  }, [islandListening]);
+
+  // Live words under the island. Measure how many lines they fill (the sheet
+  // grows to fit, up to ISLAND_WORD_LINES), and when a new line wraps once the
+  // sheet is full, glide the text up instead of letting it jump.
+  useLayoutEffect(() => {
+    const p = wordsRef.current;
+    if (!island || !p) return;
+    const height = p.offsetHeight;
+    const previous = wordsHeightRef.current;
+    wordsHeightRef.current = height;
+    const lines = Math.min(
+      ISLAND_WORD_LINES,
+      Math.round(height / ISLAND_WORD_LINE),
+    );
+    setWordLines(lines);
+    const full = previous >= ISLAND_WORD_LINE * ISLAND_WORD_LINES;
+    if (full && height > previous && !prefersReducedMotion()) {
+      p.style.transition = "none";
+      p.style.transform = `translateY(${height - previous}px)`;
+      void p.offsetHeight; // commit the offset before animating it away
+      p.style.transition = "";
+      p.style.transform = "";
+    }
+  }, [island, streamText]);
+
   // ---- Island: the notch grows into a black tab; the voice is a red line
   // glowing along its bottom edge. It stays mounted while hidden so it can
   // retract back into the notch instead of vanishing.
@@ -233,20 +292,21 @@ const RecordingOverlay: React.FC = () => {
         : working
           ? "working"
           : "listening";
-    const mean = levels.reduce((sum, v) => sum + v, 0) / levels.length;
-    const level = captureReady
-      ? Math.max(0.06, Math.min(1, Math.pow(mean, 0.7) * 1.6))
-      : 0;
+    const committed = streamText.committed.split(/\s+/).filter(Boolean);
+    const words = [
+      ...committed,
+      ...streamText.tentative.split(/\s+/).filter(Boolean),
+    ];
     const style = {
       "--nw": `${island.notchWidth}px`,
       "--nh": `${island.notchHeight}px`,
-      "--level": level.toFixed(3),
+      "--word-lines": words.length > 0 ? wordLines : 0,
     } as React.CSSProperties;
 
     return (
-      <div className="island-stage" style={style}>
+      <div className="island-stage" style={style} ref={stageRef}>
         <div
-          className={`island ${phase}`}
+          className={`island ${phase} ${words.length > 0 ? "has-words" : ""}`}
           role="status"
           aria-label={
             working ? t("overlay.transcribing") : t("overlay.recording")
@@ -260,6 +320,22 @@ const RecordingOverlay: React.FC = () => {
             <svg className="island-check" viewBox="0 0 14 14" aria-hidden>
               <path d="M2.5 7.4 5.6 10.3 11.5 3.8" />
             </svg>
+            {/* Newest words at the bottom; each word fades up as it lands and
+                brightens once the model commits to it. Hidden from screen
+                readers: the pasted text is the announcement. */}
+            <div className="island-words" dir={direction} aria-hidden>
+              <p ref={wordsRef}>
+                {words.map((word, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && " "}
+                    <span className={i < committed.length ? "" : "tentative"}>
+                      {word}
+                    </span>
+                  </React.Fragment>
+                ))}
+              </p>
+            </div>
+            <i className="island-glow" />
             <i className="island-line" />
           </div>
           <i className="island-shoulder right" />

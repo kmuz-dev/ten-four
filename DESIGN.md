@@ -65,10 +65,13 @@ It is the only overlay style that follows this document; Minimal and Live remain
 - **Recording:**
   - It grows out of the notch, 30pt wider on each side and 5pt taller, with concave shoulders where it meets the top edge of the screen.
   - A red dot sits in the left wing, dim while the microphone is still arming.
-  - Your voice is a 2pt red line glowing along the bottom edge. Its width follows the input level.
+  - Your voice is a 2pt red line glowing along the bottom edge. It is widest and hottest in the middle and tapers to nothing at the tips; its width follows your voice, and each syllable flashes it slightly brighter.
+  - Your words stream in under the notch as you speak. The island widens into a 420pt sheet and drops one line at a time, up to two, with older lines gliding up out of view.
+  - Each word fades up out of a slight blur as it lands. Words the model may still revise sit at 50% white and brighten when it commits to them.
 - **Transcribing:**
   - The dot dims.
   - The line becomes a faint full-width rail with light sweeping across it.
+  - The words stay, all at full white.
 - **Done (text pasted):**
   - A check draws in the right wing.
   - The line flashes white and fades.
@@ -76,17 +79,24 @@ It is the only overlay style that follows this document; Minimal and Live remain
 - **Cancelled or failed:** it retracts at once, with no check.
 - **No notch** (external display, older Mac): the same island hangs as a tab from the top center of the screen.
 - **Other platforms:** the Island setting falls back to the Minimal pill.
+- **Clicks:** the island window ignores the mouse, so the sheet never blocks the app underneath.
+- **Models that don't stream** produce no live words; the island stays a single row.
 
-Implementation: `src-tauri/src/overlay.rs` (notch detection from `NSScreen`, top-edge placement, exit timing) and `src/overlay/RecordingOverlay.tsx` + `.css`.
+Implementation: `src-tauri/src/overlay.rs` (notch detection from `NSScreen`, top-edge placement, exit timing), `src/overlay/RecordingOverlay.tsx` + `.css`, and `src/overlay/voiceGlow.ts` (the voice line).
 
 ## Motion
 
 - **Approach:** intentional and quiet. One grow, one settle, nothing ambient.
 - **Grow:** 420ms spring with a 4% overshoot (`linear()` spring, `cubic-bezier(.2,.9,.25,1.04)` fallback).
 - **Retract:** 340ms `cubic-bezier(.3,0,.2,1)`, no overshoot.
-- **Level smoothing:** fast attack and slow release (about 60ms up, 220ms down), so the line never flickers.
+- **Voice line:** runs on its own frame loop, not on mic events, which arrive only about 23 times a second.
+  - Automatic gain measures loudness against a tracked noise floor and recent peak, so a quiet voice still fills the line.
+  - A spring chases that loudness: about 100ms up, 220ms down, a touch of overshoot. The target is eased before the spring, so speed never changes abruptly and the line has no corners.
+  - A sudden rise in loudness (a syllable onset) flashes the line brighter for about 140ms, so the light follows the cadence of speech.
+  - `bun run test:voice-glow` pins these properties.
+- **Words:** fade and unblur in 280ms `cubic-bezier(.16,1,.3,1)`; a wrapped line glides up in 300ms on the same curve.
 - **Check:** draws in 180ms after a 120ms delay.
-- **Reduce Motion:** size changes snap and sweeps stop; state is still readable from color and the check.
+- **Reduce Motion:** size changes snap and sweeps stop; state is still readable from color and the check. The voice line keeps its width but drops the texture and syllable flash, and words fade in without moving.
 
 ## Sound
 
@@ -130,3 +140,4 @@ Implementation: `src-tauri/src/overlay.rs` (notch detection from `NSScreen`, top
 | 2026-09-27 | Keycap + LED mark                                       | Picked over Level H and Tally ring.                                                                |
 | 2026-09-27 | Microcassette cues                                      | Picked over Felt, Click, Tape deck and Walkman.                                                    |
 | 2026-09-28 | Settings window, icons and sounds moved to Tally Light  | Pink and the hand removed; System Settings layout, system accent, keycap mark, Microcassette cues. |
+| 2026-09-28 | Live words under the island; voice line on a spring     | User wanted to see words as they speak, and a line that follows their voice smoothly.              |

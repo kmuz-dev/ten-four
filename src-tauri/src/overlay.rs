@@ -80,14 +80,20 @@ pub struct IslandGeometry {
 
 const ISLAND_MIN_CORE_WIDTH: f64 = 120.0;
 const ISLAND_MIN_HEIGHT: f64 = 24.0;
+// Live words drop down under the island in a sheet this wide, up to two lines
+// tall (`--island-text-w` and the `.island-words` block in RecordingOverlay.css).
+const ISLAND_TEXT_WIDTH: f64 = 420.0;
+const ISLAND_TEXT_HEIGHT: f64 = 56.0;
 
 /// Island window size (logical). The window only has to contain the drawn
-/// island: the notch plus the grown wings, the concave shoulders, and the glow
-/// bleeding below it. The frontend owns the exact geometry; this is headroom.
+/// island: the notch plus the grown wings, the concave shoulders, the live-words
+/// sheet and the glow bleeding below it. The frontend owns the exact geometry;
+/// this is headroom. The window ignores the mouse (see `show_overlay_state_on_main`),
+/// so its transparent margin never blocks clicks on the app underneath.
 fn island_window_size(geometry: IslandGeometry) -> (f64, f64) {
     (
-        geometry.notch_width.max(ISLAND_MIN_CORE_WIDTH) + 200.0,
-        geometry.notch_height.max(ISLAND_MIN_HEIGHT) + 24.0,
+        (geometry.notch_width.max(ISLAND_MIN_CORE_WIDTH) + 200.0).max(ISLAND_TEXT_WIDTH + 60.0),
+        geometry.notch_height.max(ISLAND_MIN_HEIGHT) + 24.0 + ISLAND_TEXT_HEIGHT,
     )
 }
 
@@ -648,6 +654,11 @@ fn show_overlay_state_on_main(app_handle: &AppHandle, state: &str) {
             };
             let pos_calc_elapsed = pos_started.elapsed() - set_pos_elapsed;
 
+            // The island has no controls, and its window reaches below the menu
+            // bar to fit the live words, so let clicks fall through to the app
+            // underneath. The pill keeps its cancel button clickable.
+            let _ = overlay_window.set_ignore_cursor_events(island.is_some());
+
             let show_started = std::time::Instant::now();
             let _ = overlay_window.show();
             let show_elapsed = show_started.elapsed();
@@ -881,6 +892,24 @@ pub fn emit_levels(app_handle: &AppHandle, levels: &[f32]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn island_window_fits_the_live_words_sheet_and_wide_notches() {
+        let notch = IslandGeometry {
+            notch_width: 179.0,
+            notch_height: 32.0,
+        };
+        let (w, h) = island_window_size(notch);
+        assert!(w >= ISLAND_TEXT_WIDTH + 60.0);
+        assert!(h >= 32.0 + 5.0 + ISLAND_TEXT_HEIGHT);
+
+        // A notch wider than the words sheet still leaves room for the wings.
+        let wide = IslandGeometry {
+            notch_width: 400.0,
+            notch_height: 38.0,
+        };
+        assert_eq!(island_window_size(wide).0, 600.0);
+    }
 
     #[test]
     fn monitor_hit_test_uses_half_open_physical_bounds() {
