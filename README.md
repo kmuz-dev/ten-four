@@ -24,7 +24,9 @@ If you want the original, cross-platform app, use [Handy](https://handy.computer
 ## Privacy
 
 Speech is transcribed on your Mac, as in Handy.
-Smart Format and App Styles are the exception: when you turn them on, the transcribed text and a short style hint (never the audio) are sent to the language model provider you choose, such as Groq, OpenAI or Anthropic, using your own API key.
+Smart Format and App Styles are the exception: when you turn them on, the transcribed text is sent to the language model provider you choose, such as Groq, OpenAI or Anthropic, using your own API key.
+App Styles also sends the name of the app you're typing into, so the model can match its tone.
+Your audio never leaves your Mac.
 Leave them off and Ten-Four works fully offline.
 
 ## Install
